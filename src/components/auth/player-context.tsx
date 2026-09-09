@@ -18,6 +18,7 @@ import { WORLD } from "@/game/data/campus";
 import type { GameSave } from "@/types/game";
 
 interface PlayerContextValue {
+  repositoryMode: "LOCAL" | "SUPABASE";
   save: GameSave | null;
   ready: boolean;
   error: string;
@@ -140,6 +141,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   return (
     <Context.Provider
       value={{
+        repositoryMode: "LOCAL",
         save,
         ready,
         error,

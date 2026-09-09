@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { usePlayer } from "@/components/auth/player-context";
 import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
 import { progression } from "@/game/progression/progression";
+import { FeedbackDialog } from "@/components/ui/feedback-dialog";
+import { APP_VERSION, RELEASE_LABEL } from "@/lib/app-info";
 function Profile() {
   const { save, logout, reset } = usePlayer();
   const router = useRouter();
   const [error, setError] = useState("");
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const xp = progression(save!.xp);
   return (
     <>
@@ -16,6 +19,9 @@ function Profile() {
       <main className="content-page profile-page">
         <span className="eyebrow">PLAYER FILE / PROTOTYPE MODE</span>
         <h1>Your campus story.</h1>
+        <p className="muted">
+          v{APP_VERSION} / {RELEASE_LABEL}
+        </p>
         <div className="profile-card">
           <div className="profile-avatar" aria-label="Original explorer avatar">
             <svg viewBox="0 0 80 100" aria-hidden="true">
@@ -81,6 +87,9 @@ function Profile() {
           your collection.
         </p>
         <div className="profile-actions">
+          <button onClick={() => setFeedbackOpen(true)}>
+            Playtest feedback
+          </button>
           <Link href="/game" className="button primary">
             Continue exploring →
           </Link>
@@ -130,6 +139,9 @@ function Profile() {
       <footer className="content-footer">
         <Disclaimer />
       </footer>
+      {feedbackOpen && (
+        <FeedbackDialog onClose={() => setFeedbackOpen(false)} />
+      )}
     </>
   );
 }

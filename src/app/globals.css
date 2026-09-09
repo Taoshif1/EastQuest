@@ -1572,3 +1572,19 @@ kbd {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep gesture suppression on the play surface, so menus retain browser zoom. */
+.canvas-host { touch-action: none; overscroll-behavior: contain; }
+.game-page:fullscreen { background: var(--navy); width: 100%; }
+.fullscreen-control button { font-size: 11px; padding: 6px 10px; min-height: 32px; }
+.fullscreen-control [role="status"] { position: fixed; bottom: 50px; right: 10px; background: var(--navy); padding: 10px; z-index: 5; }
+.debug-panel { position: absolute; top: 135px; left: 12px; z-index: 3; max-width: calc(100% - 24px); padding: 8px 12px; background: #091b20eb; border: 1px solid #819183; border-radius: 6px; font: 11px/1.6 monospace; }
+.debug-panel summary { cursor: pointer; }
+.feedback-form { display: grid; gap: 16px; margin-top: 20px; }
+.feedback-form label { display: grid; gap: 7px; }
+.feedback-form textarea, .feedback-form select { width: 100%; padding: 10px; font: inherit; font-size: 16px; background: #142b2a; color: var(--text); border: 1px solid #819183; border-radius: 6px; }
+.feedback-form textarea { resize: vertical; }
+.game-footer { min-height: 40px; }
+@media (max-height: 500px) {
+  .debug-panel { top: 8px; left: 170px; max-height: 110px; overflow: auto; }
+}

@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible EastQuest prototype bug.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include passwords, tokens, real student IDs or private information. Crop/redact screenshots."
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: "Example: Pixel 7 or laptop"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+    validations:
+      required: true
+  - type: input
+    id: screen
+    attributes:
+      label: Page or game screen
+      description: Include build version and viewport size if known.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag a redacted screenshot here.
