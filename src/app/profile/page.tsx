@@ -1,0 +1,142 @@
+"use client";
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePlayer } from "@/components/auth/player-context";
+import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
+import { progression } from "@/game/progression/progression";
+function Profile() {
+  const { save, logout, reset } = usePlayer();
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const xp = progression(save!.xp);
+  return (
+    <>
+      <PageHeader />
+      <main className="content-page profile-page">
+        <span className="eyebrow">PLAYER FILE / PROTOTYPE MODE</span>
+        <h1>Your campus story.</h1>
+        <div className="profile-card">
+          <div className="profile-avatar" aria-label="Original explorer avatar">
+            <svg viewBox="0 0 80 100" aria-hidden="true">
+              <ellipse cx="40" cy="88" rx="28" ry="7" fill="#142d2d" />
+              <path d="M23 65h13v23H23zm22 0h13v23H45z" fill="#1c3041" />
+              <rect
+                x="19"
+                y="39"
+                width="44"
+                height="31"
+                rx="8"
+                fill="#efba66"
+              />
+              <rect
+                x="48"
+                y="46"
+                width="19"
+                height="25"
+                rx="5"
+                fill="#54868c"
+              />
+              <circle cx="40" cy="28" r="17" fill="#e8ba92" />
+              <path d="M22 25V10h36v16H32v9H22" fill="#263640" />
+              <circle cx="48" cy="29" r="2" fill="#263640" />
+            </svg>
+          </div>
+          <div>
+            <span className="eyebrow">{save!.profile.avatarId}</span>
+            <h2>{save!.profile.displayName}</h2>
+            <p>{save!.profile.studentId}</p>
+            <p className="muted profile-email">{save!.profile.email}</p>
+            <span className="prototype-badge">
+              LOCAL PROFILE · NOT EWU VERIFIED
+            </span>
+          </div>
+        </div>
+        <div className="profile-stats">
+          <div>
+            <strong>{xp.level}</strong>
+            <span>LEVEL</span>
+          </div>
+          <div>
+            <strong>{save!.xp}</strong>
+            <span>TOTAL XP</span>
+          </div>
+          <div>
+            <strong>{Object.keys(save!.collectibles).length} / 5</strong>
+            <span>CAMPUS KEYS</span>
+          </div>
+          <div>
+            <strong>
+              {
+                Object.values(save!.quests).filter(
+                  (q) => q.status === "COMPLETED",
+                ).length
+              }
+            </strong>
+            <span>QUESTS COMPLETE</span>
+          </div>
+        </div>
+        <p className="muted">
+          Progress lives in this browser. Use the same student ID to return to
+          your collection.
+        </p>
+        <div className="profile-actions">
+          <Link href="/game" className="button primary">
+            Continue exploring →
+          </Link>
+          <button
+            onClick={async () => {
+              try {
+                await logout();
+                router.push("/login");
+              } catch (e) {
+                setError((e as Error).message);
+              }
+            }}
+          >
+            Switch local profile
+          </button>
+        </div>
+        <details className="dev-settings">
+          <summary>Prototype settings</summary>
+          <p>
+            Reset quests, XP, and keys for this profile. Your student ID and
+            avatar are retained.
+          </p>
+          <button
+            className="danger"
+            onClick={async () => {
+              if (
+                window.confirm(
+                  "Reset all quest progress, XP, and Campus Keys for this local profile? This cannot be undone.",
+                )
+              ) {
+                try {
+                  await reset();
+                  router.push("/game");
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }
+            }}
+          >
+            Reset prototype progress
+          </button>
+        </details>
+        <p role="alert" className="error">
+          {error}
+        </p>
+      </main>
+      <footer className="content-footer">
+        <Disclaimer />
+      </footer>
+    </>
+  );
+}
+export default function ProfilePage() {
+  return (
+    <PlayerGuard>
+      <Profile />
+    </PlayerGuard>
+  );
+}

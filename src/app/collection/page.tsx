@@ -1,0 +1,92 @@
+"use client";
+import Link from "next/link";
+import { usePlayer } from "@/components/auth/player-context";
+import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
+import { KeyIcon } from "@/components/ui/key-icon";
+import { collectibles, locations } from "@/game/data/campus";
+function Collection() {
+  const { save } = usePlayer();
+  const count = Object.keys(save!.collectibles).length;
+  return (
+    <>
+      <PageHeader />
+      <main className="content-page">
+        <div className="page-heading">
+          <div>
+            <span className="eyebrow">YOUR DISCOVERIES / CAMPUS GUIDE</span>
+            <h1>
+              Campus <span className="gold">Collection</span>
+            </h1>
+            <p className="muted">
+              Little discoveries. Useful knowledge. Yours to keep.
+            </p>
+          </div>
+          <div className="collection-count">
+            <strong>
+              {count}
+              <span> / 5</span>
+            </strong>
+            <span>KEYS DISCOVERED</span>
+          </div>
+        </div>
+        <div className="collection-grid">
+          {collectibles.map((item, i) => {
+            const unlocked = save!.collectibles[item.id];
+            return (
+              <article
+                className={`collection-card ${unlocked ? "unlocked" : "locked"}`}
+                key={item.id}
+              >
+                <div className="collection-card-top">
+                  <span>0{i + 1}</span>
+                  <span>{unlocked ? "✓ UNLOCKED" : "◇ LOCKED"}</span>
+                </div>
+                <div className="collection-art">
+                  <KeyIcon icon={item.icon} />
+                </div>
+                <p className="eyebrow">
+                  {locations.find((l) => l.id === item.location)?.name}
+                </p>
+                <h2>{item.name}</h2>
+                <p className="muted">
+                  {unlocked
+                    ? item.description
+                    : "Explore this location to reveal its Campus Key."}
+                </p>
+                {unlocked ? (
+                  <>
+                    <div className="why-matters">
+                      <span className="eyebrow">WHY IT MATTERS</span>
+                      <p>{item.whyItMatters}</p>
+                    </div>
+                    <time dateTime={unlocked.obtainedAt}>
+                      Discovered{" "}
+                      {new Date(unlocked.obtainedAt).toLocaleString()}
+                    </time>
+                  </>
+                ) : (
+                  <div className="locked-hint">
+                    Your next discovery is out there.
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+        <Link href="/game" className="button primary">
+          Back to campus →
+        </Link>
+      </main>
+      <footer className="content-footer">
+        <Disclaimer />
+      </footer>
+    </>
+  );
+}
+export default function CollectionPage() {
+  return (
+    <PlayerGuard>
+      <Collection />
+    </PlayerGuard>
+  );
+}

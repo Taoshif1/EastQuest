@@ -1,0 +1,228 @@
+"use client";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { usePlayer } from "@/components/auth/player-context";
+import { Brand, PlayerGuard } from "@/components/ui/shell";
+import { GameCanvas } from "./game-canvas";
+import { TouchControls } from "./touch-controls";
+import { QuestDialog } from "@/components/quests/quest-dialog";
+import { Modal } from "@/components/ui/modal";
+import { KeyIcon } from "@/components/ui/key-icon";
+import { locations, quests } from "@/game/data/campus";
+import { progression } from "@/game/progression/progression";
+function CampusGame() {
+  const { save, session, activate } = usePlayer();
+  const [nearby, setNearby] = useState<string | null>(null);
+  const [active, setActive] = useState<string | null>(null);
+  const [message, setMessage] = useState("");
+  const [completionDismissed, setCompletionDismissed] = useState(false);
+  const complete = Object.keys(save!.collectibles).length === 5;
+  const showCompletion = complete && !completionDismissed && !active;
+  const quest = quests.find((q) => q.locationId === nearby);
+  const selected = quests.find((q) => q.id === active);
+  const interact = useCallback(async () => {
+    if (!quest || active || showCompletion) return;
+    try {
+      await activate(quest.id);
+      setActive(quest.id);
+      setMessage("");
+    } catch (e) {
+      setMessage((e as Error).message);
+    }
+  }, [quest, active, activate, showCompletion]);
+  useEffect(() => {
+    const off1 = session.bridge.on("INTERACTION_AVAILABLE", (id) => {
+      setNearby(id);
+      setMessage("");
+    });
+    const off2 = session.bridge.on("INTERACTION_CLEARED", () => {
+      setNearby(null);
+      setMessage("");
+    });
+    return () => {
+      off1();
+      off2();
+    };
+  }, [session]);
+  useEffect(
+    () =>
+      session.bridge.on("INTERACT", () => {
+        void interact();
+      }),
+    [session, interact],
+  );
+  useEffect(() => {
+    session.bridge.emit("PAUSE_CHANGED", Boolean(active) || showCompletion);
+    return () => session.bridge.emit("PAUSE_CHANGED", false);
+  }, [session, active, showCompletion]);
+  const xp = progression(save!.xp);
+  const count = Object.keys(save!.collectibles).length;
+  return (
+    <main className="game-page">
+      <header className="game-hud">
+        <Brand />
+        <div className="player-id">
+          <span className="eyebrow">CAMPUS EXPLORER</span>
+          <span>{save!.profile.studentId}</span>
+        </div>
+        <div className="hud-xp">
+          <div>
+            <strong>LVL {xp.level.toString().padStart(2, "0")}</strong>
+            <span>
+              {xp.current} / {xp.target} XP
+            </span>
+          </div>
+          <progress
+            value={xp.current}
+            max={xp.target}
+            aria-label="XP toward next level"
+          />
+        </div>
+        <Link href="/collection" className="hud-keys">
+          <KeyIcon icon="key" />
+          <span>
+            {count}
+            <small> / 5</small>
+          </span>
+          <span className="keys-word">KEYS</span>
+        </Link>
+        <Link
+          href="/profile"
+          className="menu-link"
+          aria-label="Player profile and settings"
+        >
+          ☰
+        </Link>
+      </header>
+      <section className="world-frame">
+        <GameCanvas />
+        <div className="world-title">
+          <span className="live-dot" />
+          <div>
+            <strong>EWU CAMPUS</strong>
+            <span>SIMULATED WORLD · V0</span>
+          </div>
+        </div>
+        <aside className="route-card">
+          <span className="eyebrow">YOUR CAMPUS ROUTE</span>
+          <strong>
+            {count === 0
+              ? "A new beginning"
+              : complete
+                ? "Campus route complete"
+                : "Follow your curiosity"}
+          </strong>
+          <span>
+            {count === 0
+              ? "Meet the Main Gate marker below."
+              : `${5 - count} more keys waiting to be discovered.`}
+          </span>
+          <div className="route-dots">
+            {quests.map((q) => (
+              <span
+                title={q.title}
+                key={q.id}
+                className={
+                  save!.quests[q.id]?.status === "COMPLETED" ? "done" : ""
+                }
+              />
+            ))}
+          </div>
+        </aside>
+        <div className="north-indicator" aria-hidden="true">
+          N<br />↑
+        </div>
+        <div className="world-caption">
+          FICTIONAL MAP · NOT REAL CAMPUS GEOGRAPHY
+        </div>
+        <TouchControls />
+        {nearby && (
+          <div className="interaction-card" aria-live="polite">
+            <div>
+              <span className="eyebrow">
+                {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
+                  ? "LOCATION COMPLETE"
+                  : "LOCATION DISCOVERED"}
+              </span>
+              <strong>{locations.find((l) => l.id === nearby)?.name}</strong>
+            </div>
+            <button className="primary" onClick={() => void interact()}>
+              <kbd>E</kbd>{" "}
+              {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
+                ? "View key"
+                : "Investigate"}
+            </button>
+          </div>
+        )}
+        {message && (
+          <p className="game-message" role="status">
+            {message}
+          </p>
+        )}
+      </section>
+      <footer className="game-footer">
+        <span>
+          <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}
+          <span className="footer-separator">·</span> <kbd>E</kbd> INTERACT
+        </span>
+        <span>YOUR CAMPUS. YOUR QUEST.</span>
+      </footer>
+      {selected && (
+        <QuestDialog
+          key={selected.id}
+          quest={selected}
+          onClose={() => setActive(null)}
+        />
+      )}
+      {showCompletion && (
+        <Modal
+          title="EWU Explorer — Campus Route Complete"
+          onClose={() => setCompletionDismissed(true)}
+        >
+          <div className="completion-state">
+            <span className="eyebrow">ALL FIVE CAMPUS KEYS FOUND</span>
+            <div className="completion-emblem">
+              <KeyIcon icon="compass" />
+            </div>
+            <h1>
+              EWU <span className="gold">EXPLORER</span>
+            </h1>
+            <h2>Campus Route Complete</h2>
+            <p>You found your way. Now make it your own.</p>
+            <div className="completion-stats">
+              <div>
+                <strong>{save!.xp}</strong>
+                <span>TOTAL XP</span>
+              </div>
+              <div>
+                <strong>5 / 5</strong>
+                <span>KEYS DISCOVERED</span>
+              </div>
+              <div>
+                <strong>5</strong>
+                <span>QUESTS COMPLETED</span>
+              </div>
+            </div>
+            <button
+              className="primary"
+              onClick={() => setCompletionDismissed(true)}
+            >
+              Continue exploring →
+            </button>
+            <div className="completion-links">
+              <Link href="/collection">View collection</Link>
+              <Link href="/profile">View profile</Link>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </main>
+  );
+}
+export function GameScreen() {
+  return (
+    <PlayerGuard>
+      <CampusGame />
+    </PlayerGuard>
+  );
+}
