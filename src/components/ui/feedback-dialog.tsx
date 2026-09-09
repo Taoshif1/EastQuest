@@ -33,17 +33,14 @@ export function FeedbackDialog({ onClose }: { onClose: () => void }) {
                 viewportHeight: window.innerHeight,
               },
             });
-            const url = URL.createObjectURL(
-              new Blob([json], { type: "application/json" }),
-            );
             const link = document.createElement("a");
-            link.href = url;
+            // Bounded notes fit a self-contained download URL without a temporary object URL lifecycle.
+            link.href =
+              "data:application/json;charset=utf-8," + encodeURIComponent(json);
             link.download = `eastquest-feedback-${Date.now()}.json`;
             document.body.append(link);
             link.click();
             link.remove();
-            // Allow mobile browsers to begin the download before releasing its URL.
-            window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
             setStatus(
               "Download requested. Check your downloads and share the file with the team. Nothing was submitted online.",
             );
