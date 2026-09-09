@@ -10,12 +10,22 @@ import { Modal } from "@/components/ui/modal";
 import { KeyIcon } from "@/components/ui/key-icon";
 import { locations, quests } from "@/game/data/campus";
 import { progression } from "@/game/progression/progression";
+import { isDebugMode, RELEASE_LABEL } from "@/lib/app-info";
+import { DebugPanel } from "./debug-panel";
+import { FullscreenControl } from "./fullscreen-control";
 function CampusGame() {
   const { save, session, activate } = usePlayer();
   const [nearby, setNearby] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [completionDismissed, setCompletionDismissed] = useState(false);
+  const [debug, setDebug] = useState(false);
+  useEffect(() => {
+    const update = () => setDebug(isDebugMode(window.location.search));
+    update();
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, []);
   const complete = Object.keys(save!.collectibles).length === 5;
   const showCompletion = complete && !completionDismissed && !active;
   const quest = quests.find((q) => q.locationId === nearby);
@@ -96,6 +106,12 @@ function CampusGame() {
       </header>
       <section className="world-frame">
         <GameCanvas />
+        {debug && (
+          <DebugPanel
+            nearby={nearby}
+            paused={Boolean(active) || showCompletion}
+          />
+        )}
         <div className="world-title">
           <span className="live-dot" />
           <div>
@@ -165,7 +181,8 @@ function CampusGame() {
           <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}
           <span className="footer-separator">·</span> <kbd>E</kbd> INTERACT
         </span>
-        <span>YOUR CAMPUS. YOUR QUEST.</span>
+        <FullscreenControl />
+        <span className="playtest-label">{RELEASE_LABEL}</span>
       </footer>
       {selected && (
         <QuestDialog

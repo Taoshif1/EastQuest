@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest a useful campus exploration improvement.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed feature
+    validations:
+      required: true
+  - type: textarea
+    id: usefulness
+    attributes:
+      label: Why is this useful for EWU students?
+    validations:
+      required: true
+  - type: textarea
+    id: gameplay
+    attributes:
+      label: Gameplay effect
+      description: How would this change a player's quest?
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority suggestion
+      options:
+        - Nice to have
+        - Useful soon
+        - Blocking playtesting

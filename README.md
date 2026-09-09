@@ -6,7 +6,25 @@ A student-built web game initially for East West University (EWU), Bangladesh.
 Student-built prototype. Not an official East West University service.
 The campus is a fictional logical map, not accurate EWU geography.
 
-## Play V0
+## V0.1 team / closed playtest foundation
+
+Repository: [Taoshif1/EastQuest](https://github.com/Taoshif1/EastQuest).
+
+[![CI](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml/badge.svg)](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml)
+
+V0 gameplay is preserved. V0.1 adds team workflow, CI, phone-test guides,
+opt-in diagnostics at `/game?debug=1`, game-only fullscreen where supported,
+and Profile ? Playtest feedback ? EXPORT FEEDBACK. Export downloads JSON locally;
+nothing is submitted online. The app version comes from package.json.
+
+The web manifest uses original compass icons and standalone display metadata.
+There is no service worker or offline guarantee.
+
+Start with [CONTRIBUTING](CONTRIBUTING.md), [team onboarding](docs/team-onboarding.md),
+[phone playtesting](docs/playtesting.md), [campus content](docs/campus-content-guide.md),
+[EWU survey](docs/ewu-campus-survey-template.md), and [V0.1 validation](docs/v0.1-validation.md).
+
+## Play V0.1
 
 Use Node.js 22.21 or newer compatible LTS and npm. From this existing project root:
 
@@ -110,13 +128,6 @@ See [architecture](docs/architecture.md), [GPS](docs/future-gps.md),
 Start with [team guide](docs/team-guide.md), [game loop](docs/game-loop.md),
 and [beta roadmap](docs/beta-roadmap.md). See [validation](docs/validation.md)
 for actual checks and remaining limits.
-
-No GitHub remote was invented. After creating the empty recommended repository:
-
-```powershell
-git remote add origin https://github.com/Taoshif1/EastQuest.git
-git push -u origin feat/v0-campus-exploration
-```
 
 Implementation references: [Next.js installation](https://nextjs.org/docs/app/getting-started/installation),
 [Phaser installation](https://docs.phaser.io/phaser/getting-started/installation),
