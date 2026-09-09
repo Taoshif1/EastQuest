@@ -10,6 +10,9 @@ The campus is a fictional logical map, not accurate EWU geography.
 
 Repository: [Taoshif1/EastQuest](https://github.com/Taoshif1/EastQuest).
 
+Hosted closed playtest: [eastquest.vercel.app](https://eastquest.vercel.app).
+Use the sample ID below; saves stay on that device and browser.
+
 [![CI](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml/badge.svg)](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml)
 
 V0 gameplay is preserved. V0.1 adds team workflow, CI, phone-test guides,

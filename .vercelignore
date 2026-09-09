@@ -1,0 +1,7 @@
+.artifacts/
+.env*
+.git/
+.next/
+node_modules/
+.vercel/
+supabase/.temp/
