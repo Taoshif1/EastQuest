@@ -123,9 +123,12 @@ describe("QuestEngine", () => {
     const { engine, position } = setup();
     let save = newGame(profile);
     for (const q of quests) {
-      position.update(
-        locations.find((l) => l.id === q.locationId)!.worldPosition,
-      );
+      const l = locations.find((l) => l.id === q.locationId)!;
+      position.updateWorldLocation({
+        buildingId: l.buildingId,
+        floorId: l.floorId,
+        position: l.worldPosition,
+      });
       save = await engine.activate(save, q.id);
       save = (await engine.submit(save, q.id, q.config.correctIndex)).save;
     }

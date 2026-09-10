@@ -14,7 +14,7 @@ import {
 import { PrototypeAuthProvider } from "./auth-provider";
 import { createSession, type GameSession } from "@/game/core/session";
 import { newGame } from "@/game/quests/quest-engine";
-import { WORLD } from "@/game/data/campus";
+import { defaultLocation, restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
 
 interface PlayerContextValue {
@@ -52,6 +52,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       .then((data) => {
         if (alive) {
           current.current = data;
+          session.position.updateWorldLocation(
+            restoreLocation(data?.worldLocation),
+          );
           setSave(data);
           session.bridge.emit(
             "PROGRESS_UPDATED",
@@ -69,6 +72,50 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       alive = false;
     };
   }, [session]);
+  useEffect(() => {
+    let last = "";
+    const flush = () => {
+      if (!current.current || !repository.current || pending.current) return;
+      const worldLocation = session.position.getWorldLocation();
+      const signature = JSON.stringify(worldLocation);
+      if (signature === last) return;
+      const data = {
+        ...current.current,
+        worldRevision: 2 as const,
+        worldLocation,
+      };
+      current.current = data;
+      void repository.current
+        .save(data)
+        .then(() => {
+          last = signature;
+        })
+        .catch((e) => setError(String(e)));
+    };
+    const off = session.bridge.on("POI_DISCOVERED", (id) => {
+      if (!current.current || current.current.discoveredPois?.includes(id))
+        return;
+      current.current = {
+        ...current.current,
+        discoveredPois: [...(current.current.discoveredPois ?? []), id],
+      };
+      last = "";
+      flush();
+    });
+    const timer = window.setInterval(flush, 1000);
+    window.addEventListener("pagehide", flush);
+    const visibility = () => {
+      if (document.hidden) flush();
+    };
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      flush();
+      off();
+      clearInterval(timer);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, [session]);
   function repo() {
     if (!repository.current)
       throw new Error(
@@ -78,6 +125,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }
   async function commit(data: GameSave) {
     // Persist before announcing rewards. A failed write never looks like saved progress.
+    data = {
+      ...data,
+      worldRevision: 2,
+      worldLocation: session.position.getWorldLocation(),
+    };
     await repo().save(data);
     current.current = data;
     setSave(data);
@@ -88,7 +140,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const data = await repo().load(profile.studentId);
     current.current = data;
     setSave(data);
-    session.position.update(WORLD.spawn);
+    session.position.updateWorldLocation(restoreLocation(data?.worldLocation));
     session.bridge.emit(
       "PROGRESS_UPDATED",
       Object.keys(data?.collectibles ?? {}),
@@ -109,8 +161,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         current.current = null;
         setSave(null);
       }
-    } else if (current.current) await commit(newGame(current.current.profile));
-    session.position.update(WORLD.spawn);
+    } else if (current.current) {
+      session.position.updateWorldLocation(defaultLocation);
+      await commit(newGame(current.current.profile));
+    }
+    session.position.updateWorldLocation(defaultLocation);
     setError("");
   }
   async function activate(id: string) {

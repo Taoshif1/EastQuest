@@ -1,13 +1,24 @@
+import { defaultLocation } from "@/game/data/campus/index";
+import type { PlayerWorldLocation } from "@/game/data/campus/types";
 import type { GeoPosition, WorldPosition } from "@/types/game";
 /** Supplies logical position independently of keyboard input, React, or quests. */
 export interface PositionProvider {
   getPosition(): WorldPosition;
+  getWorldLocation?(): PlayerWorldLocation;
   subscribe(listener: (p: WorldPosition) => void): () => void;
 }
 /** Phaser publishes collision-resolved coordinates; consumers never read keys. */
 export class SimulatedPositionProvider implements PositionProvider {
   private listeners = new Set<(p: WorldPosition) => void>();
+  private location = defaultLocation;
   constructor(private position: WorldPosition) {}
+  getWorldLocation(): PlayerWorldLocation {
+    return { ...this.location, position: this.getPosition() };
+  }
+  updateWorldLocation(location: PlayerWorldLocation) {
+    this.location = { ...location, position: { ...location.position } };
+    this.update(location.position);
+  }
   getPosition() {
     return { ...this.position };
   }

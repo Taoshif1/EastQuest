@@ -56,8 +56,30 @@ never authenticates against EWU and never stores passwords.
 
 ## Map and progression
 
-Map data contains five logical location centers plus independent solid building footprints.
-Markers sit outside buildings so a player can reach them without entering a wall.
-Coordinates are not real geography. Arcade world bounds constrain the avatar.
+Campus data lives in src/game/data/campus: typed floor modules call the shared
+geometry factory, buildings declare service limits, connections define persistent
+core identities, and POIs carry their own evidence. The renderer consumes this
+data; it does not define navigation. Rectified pixel coordinates are not GPS.
+
+collisionRects derives the perimeter of the union of walkable areas, then adds
+interior walls and solid furniture. Phaser, save restoration, integrity tests,
+and the atlas consume those same bounds. Room gaps must accommodate the centred
+18px avatar body. Reachability tests catch isolated-but-walkable markers.
+
+A lift serves only the floors listed for that building; stairs offer adjacent
+entries in their core's service list. The scene validates source-floor service
+and proximity before travel. During the fade it stops publishing the retiring
+player position, then restarts at the destination's same-core landing.
+PositionProvider publishes building, floor and x/y independently of input.
+Proximity verification checks building and floor as well as radius.
+
+PlayerProvider periodically persists location and discoveries through the existing
+repository. Save schema version stays 1 for compatibility, with worldRevision 2
+identifying the campus coordinates. Old coordinates are never interpreted as V0.2
+coordinates. Roof-only, unknown, nonfinite and colliding positions fall back.
+
+Calibration stays behind NODE_ENV=development in both the scene and reference API.
+The API selects only known floor filenames; URL input never becomes a file path.
+Both reference variants are local-only. Production returns 404 before file access.
 Progression uses 300 XP per level; 450 total XP gives level 2 with 150/300 progress.
 AvatarId is stored now; customization is deferred.

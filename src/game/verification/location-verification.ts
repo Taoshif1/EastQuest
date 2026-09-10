@@ -15,6 +15,10 @@ export class ProximityVerificationProvider implements LocationVerificationProvid
     const p = this.positions.getPosition();
     const verified =
       location.verificationModes.includes("proximity") &&
+      (!this.positions.getWorldLocation ||
+        (this.positions.getWorldLocation().floorId === location.floorId &&
+          this.positions.getWorldLocation().buildingId ===
+            location.buildingId)) &&
       Math.hypot(
         p.x - location.worldPosition.x,
         p.y - location.worldPosition.y,

@@ -1,64 +1,6 @@
-import type { CampusLocation, Collectible, Quest } from "@/types/game";
-
-export const WORLD = {
-  width: 1280,
-  height: 1060,
-  spawn: { x: 640, y: 915 },
-  speed: 220,
-};
-/** These coordinates are invented for play. They are not a geographic campus plan. */
-export const locations: CampusLocation[] = [
-  {
-    id: "gate",
-    slug: "main-gate",
-    name: "EWU Main Gate",
-    description: "Your first step into a campus full of possibilities.",
-    type: "entrance",
-    worldPosition: { x: 640, y: 880 },
-    interactionRadius: 85,
-    verificationModes: ["proximity"],
-  },
-  {
-    id: "library",
-    slug: "library",
-    name: "Library",
-    description: "Build your research instincts and discover better sources.",
-    type: "learning",
-    worldPosition: { x: 330, y: 650 },
-    interactionRadius: 82,
-    verificationModes: ["proximity"],
-  },
-  {
-    id: "ics",
-    slug: "computer-lab",
-    name: "ICS / Computer Lab",
-    description: "A little logic goes a long way.",
-    type: "learning",
-    worldPosition: { x: 950, y: 650 },
-    interactionRadius: 82,
-    verificationModes: ["proximity"],
-  },
-  {
-    id: "career",
-    slug: "career-center",
-    name: "Career Counseling Center",
-    description: "Turn what you can do into a story that connects.",
-    type: "career",
-    worldPosition: { x: 330, y: 325 },
-    interactionRadius: 82,
-    verificationModes: ["proximity"],
-  },
-  {
-    id: "support",
-    slug: "student-support",
-    name: "Medical / Student Support",
-    description: "Knowing when to ask for support is a campus skill.",
-    type: "support",
-    worldPosition: { x: 950, y: 325 },
-    interactionRadius: 82,
-    verificationModes: ["proximity"],
-  },
-];
+import type { Collectible, Quest } from "@/types/game";
+export { WORLD } from "./campus/index";
+export { locations } from "./campus/pois";
 export const collectibles: Collectible[] = [
   {
     id: "explorer-pass",
@@ -121,7 +63,7 @@ export const quests: Quest[] = [
       options: ["Begin my quest"],
       correctIndex: 0,
       explanation:
-        "Your Explorer Pass is yours. Head northwest to the Library or northeast to the Computer Lab.",
+        "Your Explorer Pass is yours. Continue through security and the punch gate to the courtyard. Find the Library in Block B, Fifth Floor, using its lift or stairs.",
       steps: [
         "MOVE · Use WASD, arrow keys, or the touch D-pad.",
         "DISCOVER · Walk toward a glowing location marker.",
@@ -213,39 +155,5 @@ export const quests: Quest[] = [
       explanation:
         "Listen respectfully, protect their privacy, and help them connect with a trusted support resource.",
     },
-  },
-];
-export const buildings = [
-  {
-    x: 210,
-    y: 470,
-    width: 240,
-    height: 130,
-    label: "LIBRARY",
-    color: 0xbfa77b,
-  },
-  {
-    x: 830,
-    y: 470,
-    width: 240,
-    height: 130,
-    label: "COMPUTER LAB",
-    color: 0x66aeb5,
-  },
-  {
-    x: 210,
-    y: 145,
-    width: 240,
-    height: 130,
-    label: "CAREER CENTER",
-    color: 0xb69fc0,
-  },
-  {
-    x: 830,
-    y: 145,
-    width: 240,
-    height: 130,
-    label: "STUDENT SUPPORT",
-    color: 0x85b697,
   },
 ];

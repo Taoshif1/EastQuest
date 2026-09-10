@@ -4,9 +4,10 @@
 
 A student-built web game initially for East West University (EWU), Bangladesh.
 Student-built prototype. Not an official East West University service.
-The campus is a fictional logical map, not accurate EWU geography.
+V0.2 uses locally supplied EWU architectural plans and the public campus directory.
+The playable geometry is rectified and simplified; it is not a surveyed navigation aid.
 
-## V0.1 team / closed playtest foundation
+## V0.2 — Real EWU Campus World
 
 Repository: [Taoshif1/EastQuest](https://github.com/Taoshif1/EastQuest).
 
@@ -15,10 +16,16 @@ Use the sample ID below; saves stay on that device and browser.
 
 [![CI](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml/badge.svg)](https://github.com/Taoshif1/EastQuest/actions/workflows/ci.yml)
 
-V0 gameplay is preserved. V0.1 adds team workflow, CI, phone-test guides,
-opt-in diagnostics at `/game?debug=1`, game-only fullscreen where supported,
-and Profile ? Playtest feedback ? EXPORT FEEDBACK. Export downloads JSON locally;
-nothing is submitted online. The app version comes from package.json.
+The existing quest engine now runs in a multi-floor EWU campus: two basements,
+ground, and floors 1–8. Walk through the outer gate, security, and punch gate,
+then find the courtyard and block lift/stair lobbies. Press M or tap the minimap
+for the campus atlas. Roof Deck and the FUB interior remain reference-only.
+
+Diagnostics are available at `/game?debug=1`. The architectural blueprint overlay
+requires a local development server and local reference files. Original drawings
+are ignored by Git and are never served by production builds.
+See [map notes](docs/v0.2-map-notes.md), [source register](docs/campus-source-register.md),
+and [map editing](docs/campus-map-editing.md).
 
 The web manifest uses original compass icons and standalone display metadata.
 There is no service worker or offline guarantee.
@@ -27,7 +34,7 @@ Start with [CONTRIBUTING](CONTRIBUTING.md), [team onboarding](docs/team-onboardi
 [phone playtesting](docs/playtesting.md), [campus content](docs/campus-content-guide.md),
 [EWU survey](docs/ewu-campus-survey-template.md), and [V0.1 validation](docs/v0.1-validation.md).
 
-## Play V0.1
+## Play V0.2
 
 Use Node.js 22.21 or newer compatible LTS and npm. From this existing project root:
 
@@ -44,7 +51,9 @@ two-digit program, and three-digit sequence. Historical formats need research.
 
 Move with WASD/arrows or the touch D-pad. Press E or tap Investigate near a marker.
 Complete the Main Gate tutorial, then visit the Library, ICS / Computer Lab,
-Career Counseling Center, and Medical / Student Support in any order.
+Career Counseling Center, and Medical Center in any order.
+Library: Block B / Fifth. ICS Computer Lab: Block B / Fourth.
+Career Counseling: Admin / Second. Medical Center: Block D / First.
 Earn Explorer Pass (50 XP), Knowledge Key, Tech Chip, Career Compass, and Support
 Beacon (100 XP each). All five award the EWU EXPLORER completion screen.
 Continue exploring afterwards; collection and profile remain available.
@@ -94,7 +103,9 @@ QuestEngine uses LocationVerificationProvider, checks prerequisites, evaluates
 answers, and produces an immutable save. PlayerProvider serializes actions and
 persists before announcing rewards. LocalGameRepository is the only storage
 implementation. Profiles, avatarId, XP, level, attempts, completions and timestamped
-keys survive reload. Position intentionally restarts at the gate after a reload.
+keys survive reload. Building, floor, collision-resolved position, and discovered POIs survive reload.
+V0.1 saves migrate to the outer gate while preserving quests, XP, and keys.
+Invalid or colliding saved positions safely fall back to the outer gate.
 Clearing browser data deletes saves. Local data is editable and has no anti-cheat
 guarantee. Multiple tabs are not synchronized; play in one tab for V0.
 

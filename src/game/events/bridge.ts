@@ -1,5 +1,12 @@
+import type { CalibrationOptions } from "@/game/data/campus/calibration";
 import type { WorldPosition } from "@/types/game";
 export type GameEvents = {
+  CONNECTION_AVAILABLE: string | null;
+  TRAVEL_REQUESTED: { connectionId: string; floorId: string };
+  FLOOR_CHANGED: string;
+  MAP_TOGGLE: undefined;
+  POI_DISCOVERED: string;
+  CALIBRATION_CHANGED: CalibrationOptions;
   PLAYER_POSITION_CHANGED: WorldPosition;
   INTERACTION_AVAILABLE: string;
   INTERACTION_CLEARED: undefined;
@@ -15,7 +22,11 @@ export class GameBridge {
   private target = new EventTarget();
   private state: Partial<GameEvents> = {};
   emit<K extends keyof GameEvents>(type: K, detail: GameEvents[K]) {
-    if (type === "PAUSE_CHANGED" || type === "PROGRESS_UPDATED")
+    if (
+      type === "PAUSE_CHANGED" ||
+      type === "PROGRESS_UPDATED" ||
+      type === "CALIBRATION_CHANGED"
+    )
       this.state[type] = detail;
     this.target.dispatchEvent(new CustomEvent(type, { detail }));
   }

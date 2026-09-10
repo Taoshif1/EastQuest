@@ -1,3 +1,4 @@
+import { defaultLocation } from "@/game/data/campus/index";
 import type {
   CampusLocation,
   GameSave,
@@ -9,7 +10,17 @@ import type { LocationVerificationProvider } from "@/game/verification/location-
 import { progression } from "@/game/progression/progression";
 
 export function newGame(profile: Profile): GameSave {
-  return { version: 1, profile, xp: 0, level: 1, quests: {}, collectibles: {} };
+  return {
+    version: 1,
+    worldRevision: 2,
+    worldLocation: defaultLocation,
+    discoveredPois: [],
+    profile,
+    xp: 0,
+    level: 1,
+    quests: {},
+    collectibles: {},
+  };
 }
 /** Pure domain service: prerequisites and rewards live here, never in a modal or scene. */
 export class QuestEngine {

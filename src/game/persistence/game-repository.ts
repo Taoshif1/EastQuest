@@ -1,3 +1,4 @@
+import { restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
 /** All storage is behind this contract; a production adapter can use authenticated APIs. */
 export interface GameRepository {
@@ -43,7 +44,16 @@ export class LocalGameRepository implements GameRepository {
           throw new Error();
       for (const c of Object.values(data.collectibles))
         if (!c || !Number.isFinite(Date.parse(c.obtainedAt))) throw new Error();
-      return data;
+      return {
+        ...data,
+        worldRevision: 2,
+        worldLocation: restoreLocation(
+          data.worldRevision === 2 ? data.worldLocation : null,
+        ),
+        discoveredPois: Array.isArray(data.discoveredPois)
+          ? data.discoveredPois.filter((id) => typeof id === "string")
+          : [],
+      };
     } catch {
       throw new Error(
         "This local save is unreadable. Use Reset local profile on the login screen to start again.",
