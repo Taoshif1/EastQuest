@@ -16,6 +16,7 @@ import { createSession, type GameSession } from "@/game/core/session";
 import { newGame } from "@/game/quests/quest-engine";
 import { defaultLocation, restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
+import { recordDiscovery } from "@/game/quests/discovery";
 
 interface PlayerContextValue {
   repositoryMode: "LOCAL" | "SUPABASE";
@@ -93,14 +94,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         .catch((e) => setError(String(e)));
     };
     const off = session.bridge.on("POI_DISCOVERED", (id) => {
-      if (!current.current || current.current.discoveredPois?.includes(id))
-        return;
-      current.current = {
-        ...current.current,
-        discoveredPois: [...(current.current.discoveredPois ?? []), id],
-      };
+      if (!current.current) return;
+      const result = recordDiscovery(current.current, id);
+      if (!result.isNew) return;
+      current.current = result.save;
       last = "";
       flush();
+      session.bridge.emit("POI_DISCOVERY_NEW", id);
     });
     const timer = window.setInterval(flush, 1000);
     window.addEventListener("pagehide", flush);

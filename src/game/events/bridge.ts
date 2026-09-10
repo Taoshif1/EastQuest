@@ -6,6 +6,7 @@ export type GameEvents = {
   FLOOR_CHANGED: string;
   MAP_TOGGLE: undefined;
   POI_DISCOVERED: string;
+  POI_DISCOVERY_NEW: string;
   CALIBRATION_CHANGED: CalibrationOptions;
   PLAYER_POSITION_CHANGED: WorldPosition;
   INTERACTION_AVAILABLE: string;

@@ -8,6 +8,9 @@ import { collectibles, locations } from "@/game/data/campus";
 function Collection() {
   const { save } = usePlayer();
   const count = Object.keys(save!.collectibles).length;
+  const discovered = locations.filter((location) =>
+    save!.discoveredPois?.includes(location.id),
+  );
   return (
     <>
       <PageHeader />
@@ -30,6 +33,26 @@ function Collection() {
             <span>KEYS DISCOVERED</span>
           </div>
         </div>
+        {discovered.length > 0 && (
+          <section className="knowledge-panel" aria-labelledby="campus-guide-title">
+            <span className="eyebrow">CAMPUS GUIDE</span>
+            <h2 id="campus-guide-title">Places you have discovered</h2>
+            <div className="knowledge-grid">
+              {discovered.map((location) => (
+                <article key={location.id}>
+                  <strong>{location.name}</strong>
+                  <span>
+                    {buildingName(location.buildingId)} · {location.floor}
+                  </span>
+                  <p>{location.description}</p>
+                  <small>
+                    {location.type} · {location.evidence.confidence.toLowerCase()} confidence
+                  </small>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="collection-grid">
           {collectibles.map((item, i) => {
             const unlocked = save!.collectibles[item.id];

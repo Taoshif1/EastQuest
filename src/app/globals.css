@@ -48,6 +48,38 @@ button,
     background 0.15s,
     transform 0.15s;
 }
+.knowledge-panel {
+  margin: 28px 0 36px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.knowledge-panel h2 {
+  margin: 6px 0 16px;
+}
+.knowledge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.knowledge-grid article {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  background: var(--panel);
+  border-radius: 7px;
+}
+.knowledge-grid span,
+.knowledge-grid small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.knowledge-grid p {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
 button:hover,
 .button:hover {
   background: #2a3d47;

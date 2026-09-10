@@ -16,6 +16,7 @@ import { DebugPanel } from "./debug-panel";
 import { CampusNavigation } from "./campus-navigation";
 import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
+import { currentObjective } from "@/game/quests/objectives";
 function CampusGame() {
   const { save, session, activate, error } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -26,6 +27,7 @@ function CampusGame() {
   const [message, setMessage] = useState("");
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [debug, setDebug] = useState(false);
+  const [discovery, setDiscovery] = useState<string | null>(null);
   useEffect(() => {
     const update = () => setDebug(isDebugMode(window.location.search));
     update();
@@ -114,6 +116,14 @@ function CampusGame() {
       quests.find((q) => save!.quests[q.id]?.status !== "COMPLETED")
         ?.locationId,
   );
+  const objective = currentObjective(save!);
+  useEffect(() => {
+    const off = session.bridge.on("POI_DISCOVERY_NEW", (id) => {
+      setDiscovery(id);
+      window.setTimeout(() => setDiscovery((current) => (current === id ? null : current)), 3600);
+    });
+    return off;
+  }, [session]);
   return (
     <main className="game-page">
       <header className="game-hud">
@@ -207,6 +217,18 @@ function CampusGame() {
             ))}
           </div>
         </aside>
+        {objective && (
+          <aside className="objective-card" aria-live="polite">
+            <span className="eyebrow">CURRENT OBJECTIVE</span>
+            <strong>{objective.title}</strong>
+            <span>{objective.locationName}</span>
+            <small>
+              {objective.building} · {objective.floor}
+              <br />
+              {objective.guidance}
+            </small>
+          </aside>
+        )}
         <div className="north-indicator" aria-hidden="true">
           N<br />↑
         </div>
@@ -242,6 +264,16 @@ function CampusGame() {
             {message || error}
           </p>
         )}
+        {discovery && (() => {
+          const location = locations.find((item) => item.id === discovery);
+          return location ? (
+            <div className="discovery-toast" role="status">
+              <span className="eyebrow">LOCATION DISCOVERED</span>
+              <strong>{location.name}</strong>
+              <span>{buildingName(location.buildingId)} · {location.floor}</span>
+            </div>
+          ) : null;
+        })()}
       </section>
       <footer className="game-footer">
         <span>
