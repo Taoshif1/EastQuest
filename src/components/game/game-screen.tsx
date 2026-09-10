@@ -341,6 +341,16 @@ function CampusGame() {
             {message || error}
           </p>
         )}
+        {discovery && (() => {
+          const location = locations.find((item) => item.id === discovery);
+          return location ? (
+            <div className="discovery-toast" role="status">
+              <span className="eyebrow">LOCATION DISCOVERED</span>
+              <strong>{location.name}</strong>
+              <span>{buildingName(location.buildingId)} · {location.floor}</span>
+            </div>
+          ) : null;
+        })()}
       </section>
       {scannerOpen && (
         <Modal title="Scan Library checkpoint" onClose={() => setScannerOpen(false)}>
