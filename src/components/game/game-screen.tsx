@@ -13,7 +13,7 @@ import { locations, quests } from "@/game/data/campus";
 import { progression } from "@/game/progression/progression";
 import { isDebugMode, RELEASE_LABEL } from "@/lib/app-info";
 import { DebugPanel } from "./debug-panel";
-import { CampusNavigation } from "./campus-navigation";
+import { CampusNavigation, FloorContext } from "./campus-navigation";
 import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
 import { currentObjective } from "@/game/quests/objectives";
@@ -208,66 +208,79 @@ function CampusGame() {
             }
           />
         )}
-        <div className="world-title">
-          <span className="live-dot" />
-          <div>
-            <strong>EWU CAMPUS</strong>
-            <span>CAMPUS EXPLORATION · V0.2</span>
+        <div className="hud-left-stack">
+          <div className="world-title">
+            <span className="live-dot" />
+            <div>
+              <strong>EWU CAMPUS</strong>
+              <span>CAMPUS EXPLORATION · V0.2</span>
+            </div>
           </div>
-        </div>
-        <aside className="route-card">
-          <span className="eyebrow">YOUR CAMPUS ROUTE</span>
-          <strong>
-            {count === 0
-              ? "A new beginning"
-              : complete
-                ? "Campus route complete"
-                : "Follow your curiosity"}
-          </strong>
-          <span>
-            {count === 0
-              ? "Start at the outer gate. Follow the entry path."
-              : `${5 - count} more keys waiting to be discovered.`}
-          </span>
-          {count > 0 && destination && (
+          <FloorContext />
+          <aside className="route-card">
+            <span className="eyebrow">YOUR CAMPUS ROUTE</span>
+            <strong>
+              {count === 0
+                ? "A new beginning"
+                : complete
+                  ? "Campus route complete"
+                  : "Follow your curiosity"}
+            </strong>
             <span>
-              {destination.name}
-              <br />
-              {buildingName(destination.buildingId)} · {destination.floor}
+              {count === 0
+                ? "Start at the outer gate. Follow the entry path."
+                : `${5 - count} more keys waiting to be discovered.`}
             </span>
+            {count > 0 && destination && (
+              <span>
+                {destination.name}
+                <br />
+                {buildingName(destination.buildingId)} · {destination.floor}
+              </span>
+            )}
+            <div className="route-dots">
+              {quests.map((q) => (
+                <span
+                  title={q.title}
+                  key={q.id}
+                  className={
+                    save!.quests[q.id]?.status === "COMPLETED" ? "done" : ""
+                  }
+                />
+              ))}
+            </div>
+          </aside>
+          {objective && (
+            <aside className="objective-card" aria-live="polite">
+              <span className="eyebrow">CURRENT OBJECTIVE</span>
+              <strong>{objective.title}</strong>
+              <span>{objective.locationName}</span>
+              <small>
+                {objective.building} · {objective.floor}
+                <br />
+                {objective.guidance}
+              </small>
+            </aside>
           )}
-          <div className="route-dots">
-            {quests.map((q) => (
-              <span
-                title={q.title}
-                key={q.id}
-                className={
-                  save!.quests[q.id]?.status === "COMPLETED" ? "done" : ""
-                }
-              />
-            ))}
-          </div>
-        </aside>
-        {save!.cases?.[cases[0].id]?.pinned && (
-          <aside className="case-pinned-card" aria-live="polite">
-            <span className="eyebrow">ACTIVE CASE LEAD</span>
-            <strong>{cases[0].title}</strong>
-            <span>{cases[0].stages[save!.cases[cases[0].id].currentStage]?.objective}</span>
-            <Link href="/cases">Open case board →</Link>
-          </aside>
-        )}
-        {objective && (
-          <aside className="objective-card" aria-live="polite">
-            <span className="eyebrow">CURRENT OBJECTIVE</span>
-            <strong>{objective.title}</strong>
-            <span>{objective.locationName}</span>
-            <small>
-              {objective.building} · {objective.floor}
-              <br />
-              {objective.guidance}
-            </small>
-          </aside>
-        )}
+          {save!.cases?.[cases[0].id]?.pinned && (
+            <aside className="case-pinned-card" aria-live="polite">
+              <span className="eyebrow">ACTIVE CASE LEAD</span>
+              <strong>{cases[0].title}</strong>
+              <span>{cases[0].stages[save!.cases[cases[0].id].currentStage]?.objective}</span>
+              <Link href="/cases">Open case board →</Link>
+            </aside>
+          )}
+          {discovery && (() => {
+            const location = locations.find((item) => item.id === discovery);
+            return location ? (
+              <div className="discovery-toast" role="status">
+                <span className="eyebrow">LOCATION DISCOVERED</span>
+                <strong>{location.name}</strong>
+                <span>{buildingName(location.buildingId)} · {location.floor}</span>
+              </div>
+            ) : null;
+          })()}
+        </div>
         <div className="north-indicator" aria-hidden="true">
           N<br />↑
         </div>
@@ -308,16 +321,6 @@ function CampusGame() {
             {message || error}
           </p>
         )}
-        {discovery && (() => {
-          const location = locations.find((item) => item.id === discovery);
-          return location ? (
-            <div className="discovery-toast" role="status">
-              <span className="eyebrow">LOCATION DISCOVERED</span>
-              <strong>{location.name}</strong>
-              <span>{buildingName(location.buildingId)} · {location.floor}</span>
-            </div>
-          ) : null;
-        })()}
       </section>
       {scannerOpen && (
         <Modal title="Scan Library checkpoint" onClose={() => setScannerOpen(false)}>

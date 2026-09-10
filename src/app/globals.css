@@ -529,9 +529,6 @@ progress::-moz-progress-bar {
   padding: 30px;
 }
 .world-title {
-  position: absolute;
-  top: 24px;
-  left: 26px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -556,10 +553,8 @@ progress::-moz-progress-bar {
   letter-spacing: 1px;
 }
 .route-card {
-  position: absolute;
-  right: 24px;
-  top: 24px;
-  width: 225px;
+  width: 100%;
+  max-width: 250px;
   padding: 17px 20px;
   background: #102522ed;
   border: 1px solid #536957;
@@ -582,6 +577,21 @@ progress::-moz-progress-bar {
   font-size: 10px;
   line-height: 1.6;
   color: #becbbc;
+}
+.hud-left-stack {
+  position: absolute;
+  top: 24px;
+  left: 26px;
+  z-index: 8;
+  display: grid;
+  gap: 10px;
+  width: min(250px, calc(100% - 52px));
+  pointer-events: none;
+}
+.hud-left-stack > * {
+  position: relative;
+  inset: auto;
+  pointer-events: auto;
 }
 .route-dots {
   display: flex;

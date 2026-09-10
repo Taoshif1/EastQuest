@@ -1,7 +1,4 @@
 .floor-context {
-  position: absolute;
-  top: 78px;
-  left: 24px;
   display: grid;
   gap: 3px;
   background: #243a35eb;
@@ -108,17 +105,10 @@
   margin-top: 12px;
 }
 .world-frame .route-card {
-  left: 24px;
-  right: auto;
-  top: 165px;
-  max-width: 220px;
   background: #243a35e6;
 }
 .objective-card,
 .discovery-toast {
-  position: absolute;
-  left: 24px;
-  z-index: 8;
   display: grid;
   gap: 5px;
   max-width: 250px;
@@ -186,7 +176,7 @@
   white-space: pre-wrap;
 }
 .objective-card {
-  top: 165px;
+  max-width: 250px;
 }
 .objective-card strong,
 .discovery-toast strong {
@@ -199,8 +189,22 @@
   line-height: 1.45;
 }
 .discovery-toast {
-  top: 24px;
   animation: discovery-in 240ms ease-out;
+}
+.hud-left-stack .case-pinned-card {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  max-width: 250px;
+}
+.hud-left-stack .world-title,
+.hud-left-stack .route-card {
+  top: auto;
+  right: auto;
+  left: auto;
+}
+.hud-left-stack .route-card {
+  width: 100%;
 }
 @keyframes discovery-in {
   from { opacity: 0; transform: translateY(-8px); }
@@ -236,15 +240,16 @@
   .world-frame .route-card {
     display: none;
   }
-  .floor-context {
+  .hud-left-stack {
+    top: 12px;
     left: 12px;
-    top: 70px;
+    width: min(230px, calc(100% - 24px));
+  }
+  .floor-context {
     max-width: 190px;
     padding: 8px 10px;
   }
   .objective-card {
-    top: 145px;
-    left: 12px;
     max-width: 205px;
     padding: 9px 11px;
   }
@@ -252,10 +257,7 @@
     font-size: 10px;
   }
   .discovery-toast {
-    left: 12px;
-    right: 12px;
-    top: 112px;
-    max-width: none;
+    max-width: 205px;
   }
   .floor-context .eyebrow {
     font-size: 8px;
@@ -275,9 +277,7 @@
   .minimap-button small {
     font-size: 7px;
   }
-  .world-frame .world-title {
-    max-width: 200px;
-  }
+  .world-frame .world-title { max-width: 200px; }
   .game-page .dpad {
     grid-template-columns: repeat(3, 44px);
     grid-template-rows: repeat(2, 46px);
