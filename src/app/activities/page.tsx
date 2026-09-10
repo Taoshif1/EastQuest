@@ -31,13 +31,14 @@ function ActivitiesHub() {
   const daily = dailyChallenge();
   const dailyActivity = activities.find((item) => item.id === daily.activityId)!;
   const dailyClaimed = save!.dailyChallenge?.date === daily.date && Boolean(save!.dailyChallenge.claimedAt);
+  const dailyCompleted = Boolean(save!.activities?.[daily.activityId]?.completed);
 
   async function finish(score: number, success: boolean) {
     if (!activity) return;
     const result = await recordActivity(activity.id, score, success);
     setNotice(result.newAchievementIds.length > 0
       ? `Activity saved. Achievement unlocked: ${result.newAchievementIds.map((id) => achievements.find((item) => item.id === id)?.title ?? id).join(", ")}.`
-      : success ? "Activity saved. Your stamp is in the collection." : "Run saved. Replay to beat your best score.");
+    : result.newPersonalBest ? `New personal best: ${result.score}. ${result.xpAwarded > 0 ? `+${result.xpAwarded} XP.` : "Replay reward protected."}` : success ? "Activity saved. Your stamp is in the collection." : "Run saved. Replay to beat your best score.");
   }
 
   if (activity) {
@@ -64,7 +65,7 @@ function ActivitiesHub() {
       </div>
       <section className="daily-challenge" aria-labelledby="daily-challenge-title">
         <div><span className="eyebrow">DAILY CHALLENGE / {daily.date}</span><h2 id="daily-challenge-title">{dailyActivity.title}</h2><p className="muted">A deterministic daily pick for every explorer. Complete it once, then claim the safe +50 XP reward.</p></div>
-        <div className="daily-challenge-action">{dailyClaimed ? <strong>✓ CLAIMED TODAY</strong> : <><button className="primary" onClick={() => { setNotice(""); setSelected(dailyActivity.id); }}>Play today&apos;s challenge →</button><button className="secondary" onClick={() => void claimDailyChallenge().then((claimed) => setNotice(claimed ? "Daily reward claimed." : "Today's reward is already claimed."))}>Claim +50 XP</button></>}</div>
+        <div className="daily-challenge-action">{dailyClaimed ? <strong>✓ CLAIMED TODAY</strong> : <><button className="primary" onClick={() => { setNotice(""); setSelected(dailyActivity.id); }}>Play today&apos;s challenge →</button><button className="secondary" disabled={!dailyCompleted} onClick={() => void claimDailyChallenge().then((claimed) => setNotice(claimed ? "Daily reward claimed." : "Complete today&apos;s activity before claiming."))}>{dailyCompleted ? "Claim +50 XP" : "Complete activity to claim"}</button></>}</div>
       </section>
       <div className="activity-grid">
         {visible.map((item) => {

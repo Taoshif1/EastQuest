@@ -88,12 +88,30 @@ export type ActivityDomain =
   | "WELLBEING"
   | "SPORTS"
   | "COMMUNITY";
-export type ActivityGameType = "choice" | "timing" | "penalty" | "reaction";
+export type ActivityGameType =
+  | "choice"
+  | "timing"
+  | "penalty"
+  | "reaction"
+  | "debug"
+  | "routing"
+  | "budget"
+  | "memory"
+  | "observation"
+  | "cipher";
+export type ActivityDifficulty = "EASY" | "NORMAL" | "HARD";
 export interface ActivityRound {
   prompt: string;
   options?: string[];
   correctIndex?: number;
   explanation?: string;
+  code?: string;
+  items?: string[];
+  changedItems?: string[];
+  budget?: Record<string, number>;
+  constraints?: Record<string, number>;
+  route?: string[];
+  cipherAnswer?: string;
 }
 export interface ActivityDefinition {
   id: string;
@@ -108,6 +126,7 @@ export interface ActivityDefinition {
   rounds: ActivityRound[];
   tags: string[];
   hidden?: boolean;
+  difficulty?: ActivityDifficulty;
 }
 export interface ActivityProgress {
   plays: number;

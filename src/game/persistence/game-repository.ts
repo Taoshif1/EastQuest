@@ -80,6 +80,13 @@ export class LocalGameRepository implements GameRepository {
           }
         }
       }
+      const sportsMedals: NonNullable<GameSave["sportsMedals"]> = {};
+      if (data.sportsMedals && typeof data.sportsMedals === "object") {
+        for (const [id, medal] of Object.entries(data.sportsMedals)) {
+          if (medal === "BRONZE" || medal === "SILVER" || medal === "GOLD")
+            sportsMedals[id] = medal;
+        }
+      }
       return {
         ...data,
         worldRevision: 2,
@@ -97,6 +104,7 @@ export class LocalGameRepository implements GameRepository {
             ? data.achievements
             : {},
         stamps: migratedStamps,
+        sportsMedals,
         discoveredRumors: Array.isArray(data.discoveredRumors)
           ? data.discoveredRumors.filter((id) => typeof id === "string")
           : [],

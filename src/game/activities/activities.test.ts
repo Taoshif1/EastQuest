@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activities } from "./data";
-import { discoverRumor, penaltyScore, recordActivityResult, sportMedalForScore } from "./engine";
+import { discoverRumor, penaltyScore, recordActivityResult, sportMedalForScore, timingScore, validBudget, validRoute } from "./engine";
 import { newGame } from "@/game/quests/quest-engine";
 import { LocalGameRepository, type StoragePort } from "@/game/persistence/game-repository";
 
@@ -40,6 +40,7 @@ describe("campus activity progression", () => {
     expect(migrated!.achievements).toEqual({});
     expect(migrated!.stamps).toEqual({});
     expect(migrated!.discoveredRumors).toEqual([]);
+    expect(migrated!.sportsMedals).toEqual({});
   });
 
   it("awards a stamp, XP, and first activity achievement once", () => {
@@ -101,5 +102,48 @@ describe("campus activity progression", () => {
   it("keeps penalty saves at zero and open corners as goals", () => {
     expect(penaltyScore("left", "left")).toBe(0);
     expect(penaltyScore("left", "right")).toBe(100);
+  });
+
+  it("validates the interactive routing and budget mechanics deterministically", () => {
+    expect(validRoute(["SOURCE", "SWITCH", "TARGET"], ["SOURCE", "SWITCH", "TARGET"])).toBe(true);
+    expect(validRoute(["SOURCE", "TARGET", "SWITCH"], ["SOURCE", "SWITCH", "TARGET"])).toBe(false);
+    expect(validBudget({ Venue: 25, Promotion: 20, Equipment: 25, Refreshments: 20, Reserve: 10 }, { Promotion: 15, Equipment: 20, Reserve: 10 })).toBe(true);
+    expect(validBudget({ Venue: 50, Promotion: 10, Equipment: 20, Refreshments: 10, Reserve: 10 }, { Promotion: 15, Equipment: 20, Reserve: 10 })).toBe(false);
+  });
+
+  it("unlocks Sports All-Rounder when all three medal tracks are earned", () => {
+    let save = newGame(profile);
+    for (const id of ["cricket-boundary-timing", "futsal-penalty", "table-tennis-reaction"]) {
+      const result = recordActivityResult(save, activities.find((item) => item.id === id)!, 90, true);
+      save = result.save;
+    }
+    expect(save.achievements?.["sports-all-rounder"]).toBeDefined();
+  });
+
+  it("registers varied interaction mechanics for the academic domains", () => {
+    expect(activities.find((item) => item.id === "debug-dash")?.gameType).toBe("debug");
+    expect(activities.find((item) => item.id === "power-path")?.gameType).toBe("routing");
+    expect(activities.find((item) => item.id === "campus-budget")?.gameType).toBe("budget");
+    expect(activities.find((item) => item.id === "process-order")?.gameType).toBe("memory");
+    expect(activities.find((item) => item.id === "evidence-file")?.gameType).toBe("observation");
+    expect(activities.find((item) => item.id === "cipher-note")?.gameType).toBe("cipher");
+  });
+
+  it("protects replay XP and personal bests", () => {
+    const activity = activities.find((item) => item.id === "cricket-boundary-timing")!;
+    const first = recordActivityResult(newGame(profile), activity, 70, true);
+    const lower = recordActivityResult(first.save, activity, 55, true);
+    const higher = recordActivityResult(lower.save, activity, 80, true);
+    expect(first.save.xp).toBe(activity.rewardXp);
+    expect(lower.save.xp).toBe(activity.rewardXp);
+    expect(lower.save.activities?.[activity.id].bestScore).toBe(70);
+    expect(higher.save.activities?.[activity.id].bestScore).toBe(80);
+    expect(lower.isReplay).toBe(true);
+    expect(lower.xpAwarded).toBe(0);
+  });
+
+  it("changes timing windows by difficulty without moving the center target", () => {
+    expect(timingScore(50, 30)).toBeGreaterThan(timingScore(70, 12));
+    expect(timingScore(50, 20)).toBe(100);
   });
 });

@@ -77,6 +77,22 @@ must not depend on animation alone.
 4. Open Collection and Profile after the sports runs. Confirm the three sports
    medal slots, activity counts, and objective selection survive reload.
 
+## V0.3C3 interactive activity pass
+
+1. Open Activities and try Debug Dash. Confirm the monospace snippet is visible
+     and the answer explains the incorrect condition.
+2. Try Power Path and build `SOURCE → SWITCH → TARGET`; the route is checked as
+     one deterministic puzzle rather than a quiz card.
+3. Try Campus Budget. Adjust the fictional allocation until the total is 100 and
+     Promotion, Equipment, and Reserve meet their minimums.
+4. Try Process Order, Evidence File, and Cipher Note. Confirm the memory,
+     before/after observation, and cipher presentations are visibly different and
+     remain usable with touch.
+5. In Sports, try the timing challenge on Easy, Normal, and Hard. Confirm the
+     difficulty is optional and normal progression is not locked behind Hard.
+6. Earn medals in Cricket, Futsal Penalty, and Table Tennis Reaction. Confirm
+     the Sports All-Rounder achievement appears once all three medal tracks exist.
+
 ## One record per tester
 
 Do not collect names, passwords, real student IDs, location history or faces.

@@ -45,6 +45,9 @@ export type ActivityOutcome = {
   newAchievementIds: string[];
   newStamp: boolean;
   newMedal?: SportMedal;
+  newPersonalBest: boolean;
+  isReplay: boolean;
+  xpAwarded: number;
 };
 
 export const sportMedalThresholds: Array<{ medal: SportMedal; score: number }> = [
@@ -59,6 +62,23 @@ export function sportMedalForScore(score: number): SportMedal | undefined {
 
 export function penaltyScore(corner: string, keeperCorner: string) {
   return corner === keeperCorner ? 0 : 100;
+}
+
+export function validBudget(
+  budget: Record<string, number>,
+  constraints: Record<string, number>,
+  total = 100,
+) {
+  return Object.values(budget).reduce((sum, value) => sum + value, 0) === total &&
+    Object.entries(constraints).every(([name, minimum]) => (budget[name] ?? 0) >= minimum);
+}
+
+export function validRoute(route: string[], expected: string[]) {
+  return route.join("|") === expected.join("|");
+}
+
+export function timingScore(position: number, windowSize: number) {
+  return Math.max(0, Math.round(100 - (Math.abs(position - 50) * 100) / (windowSize * 1.5)));
 }
 
 const sportIds = ["cricket-boundary-timing", "futsal-penalty", "table-tennis-reaction"];
@@ -90,6 +110,9 @@ export function recordActivityResult(
     completed: previous.completed || adjustedCompleted,
     lastPlayedAt: now,
   };
+  const newPersonalBest = adjustedScore > previous.bestScore;
+  const isReplay = previous.completed;
+  const xpAwarded = isReplay ? 0 : adjustedCompleted ? definition.rewardXp : 0;
   let next: GameSave = {
     ...save,
     activities: { ...withActivityDefaults(save), [definition.id]: nextProgress },
@@ -97,6 +120,7 @@ export function recordActivityResult(
       ? { ...save.stamps, [definition.id]: save.stamps?.[definition.id] ?? { obtainedAt: now } }
       : save.stamps,
   };
+  const newAchievementIds: string[] = [];
   const medal = definition.domain === "SPORTS" && sportIds.includes(definition.id)
     ? sportMedalForScore(adjustedScore)
     : undefined;
@@ -107,11 +131,14 @@ export function recordActivityResult(
     if (!previousMedal || rank[medal] > rank[previousMedal]) {
       newMedal = medal;
       next = { ...next, sportsMedals: { ...(next.sportsMedals ?? {}), [definition.id]: medal } };
+      if (sportIds.every((id) => next.sportsMedals?.[id])) {
+        next = awardAchievement(next, "sports-all-rounder");
+        if (!save.achievements?.["sports-all-rounder"]) newAchievementIds.push("sports-all-rounder");
+      }
     }
   }
-  const newAchievementIds: string[] = [];
   if (!previous.completed && adjustedCompleted) {
-    next = { ...next, xp: next.xp + definition.rewardXp };
+    next = { ...next, xp: next.xp + xpAwarded };
     next = awardAchievement(next, "first-activity");
     if (!save.achievements?.["first-activity"]) newAchievementIds.push("first-activity");
     if (completedActivityDomains(next).size >= 3) {
@@ -144,6 +171,9 @@ export function recordActivityResult(
     newAchievementIds,
     newStamp: adjustedCompleted && !save.stamps?.[definition.id],
     newMedal,
+    newPersonalBest,
+    isReplay,
+    xpAwarded,
   };
 }
 
