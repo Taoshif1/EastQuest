@@ -1,5 +1,6 @@
 import { restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
+import { initialCases } from "@/game/cases/engine";
 /** All storage is behind this contract; a production adapter can use authenticated APIs. */
 export interface GameRepository {
   load(studentId: string): Promise<GameSave | null>;
@@ -53,6 +54,8 @@ export class LocalGameRepository implements GameRepository {
         discoveredPois: Array.isArray(data.discoveredPois)
           ? data.discoveredPois.filter((id) => typeof id === "string")
           : [],
+        cases: data.cases && typeof data.cases === "object" ? { ...initialCases(), ...data.cases } : initialCases(),
+        badges: data.badges && typeof data.badges === "object" ? data.badges : {},
       };
     } catch {
       throw new Error(

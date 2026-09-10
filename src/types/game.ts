@@ -69,6 +69,83 @@ export interface Profile {
   email: string;
   displayName: string;
   avatarId: string;
+  specialty?: KnowledgeDomain;
+}
+export type KnowledgeDomain =
+  | "COMPUTING"
+  | "ENGINEERING"
+  | "BUSINESS_FINANCE"
+  | "LIFE_SCIENCE"
+  | "LAW_SOCIETY"
+  | "LANGUAGE_HUMANITIES"
+  | "GENERAL"
+  | "SPORTS";
+export type CaseStatus = "LOCKED" | "AVAILABLE" | "ACTIVE" | "COMPLETED";
+export type CaseStageType =
+  | "DISCOVER"
+  | "INVESTIGATE"
+  | "COLLECT_CLUE"
+  | "MINIGAME"
+  | "TRAVEL"
+  | "VERIFY"
+  | "DEDUCTION"
+  | "FINALE";
+export type ClueType =
+  | "NOTE"
+  | "SYMBOL"
+  | "NUMBER"
+  | "OBJECT"
+  | "DOCUMENT"
+  | "RIDDLE"
+  | "PHOTO_REFERENCE"
+  | "CODE"
+  | "RUMOR";
+export interface CaseStage {
+  id: string;
+  type: CaseStageType;
+  title: string;
+  objective: string;
+  locationId?: string;
+  clueIds?: string[];
+  miniGameId?: string;
+  completionRule: string;
+  optional?: boolean;
+}
+export interface CaseDefinition {
+  id: string;
+  title: string;
+  description: string;
+  category: "ACADEMIC" | "EXPLORATION" | "MYSTERY" | "SPORTS" | "EVENT";
+  difficulty: "INTRODUCTORY" | "STANDARD" | "ADVANCED";
+  recommendedDomains: KnowledgeDomain[];
+  stages: CaseStage[];
+  rewards: { badgeId: string; xp: number; title: string };
+}
+export interface ClueDefinition {
+  id: string;
+  caseId: string;
+  title: string;
+  type: ClueType;
+  description: string;
+  locationId?: string;
+  evidenceText?: string;
+  hintText?: string;
+  domain?: KnowledgeDomain;
+  rarity?: "COMMON" | "UNCOMMON" | "RARE";
+  optional?: boolean;
+}
+export interface CaseProgress {
+  status: CaseStatus;
+  currentStage: number;
+  completedStages: string[];
+  discoveredClues: string[];
+  insightTokens: number;
+  hintsUsed: number;
+  pinned: boolean;
+  choices: string[];
+  miniGameResults: Record<string, "SUCCESS" | "FAILED" | "CANCELLED">;
+  startedAt?: string;
+  completedAt?: string;
 }
 export interface GameSave {
   version: 1;
@@ -80,4 +157,6 @@ export interface GameSave {
   level: number;
   quests: Record<string, QuestProgress>;
   collectibles: Record<string, { obtainedAt: string }>;
+  cases?: Record<string, CaseProgress>;
+  badges?: Record<string, { awardedAt: string }>;
 }

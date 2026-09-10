@@ -104,6 +104,15 @@ describe("EWU campus data", () => {
       expect(restoreLocation(bad)).toEqual(defaultLocation);
     expect(collisionRects("ground").length).toBeGreaterThan(30);
   });
+  it("keeps the entry route walkable through the security and punch gates", () => {
+    for (const point of [
+      { x: 1270, y: 1390 },
+      { x: 1270, y: 1320 },
+      { x: 1260, y: 1240 },
+      { x: 1270, y: 1170 },
+    ])
+      expect(walkable("ground", point), JSON.stringify(point)).toBe(true);
+  });
   it("migrates old saves without losing rewards and round-trips new world context", async () => {
     const m = new Map<string, string>();
     const repo = new LocalGameRepository({

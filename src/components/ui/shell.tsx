@@ -29,6 +29,7 @@ export function PageHeader() {
       <nav>
         <Link href="/game">Campus</Link>
         <Link href="/collection">Collection</Link>
+        <Link href="/cases">Cases</Link>
         <Link href="/profile">Profile</Link>
       </nav>
     </header>

@@ -16,6 +16,9 @@ import { createSession, type GameSession } from "@/game/core/session";
 import { newGame } from "@/game/quests/quest-engine";
 import { defaultLocation, restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
+import { recordDiscovery } from "@/game/quests/discovery";
+import { cases } from "@/game/cases/data";
+import { awardReflex, collectClue, completeCase, completeStage, recordMiniGameResult, setCasePinned, startCase, useHint as consumeCaseHint } from "@/game/cases/engine";
 
 interface PlayerContextValue {
   repositoryMode: "LOCAL" | "SUPABASE";
@@ -28,6 +31,14 @@ interface PlayerContextValue {
   reset(id?: string): Promise<void>;
   activate(id: string): Promise<void>;
   submit(id: string, answer: number): Promise<boolean>;
+  startCase(id: string): Promise<void>;
+  collectClue(caseId: string, clueId: string): Promise<boolean>;
+  completeCaseStage(caseId: string, stageId: string): Promise<void>;
+  finishCase(caseId: string): Promise<void>;
+  caseHint(caseId: string): Promise<void>;
+  pinCase(caseId: string, pinned: boolean): Promise<void>;
+  recordCaseMiniGame(caseId: string, gameId: string, result: "SUCCESS" | "FAILED" | "CANCELLED"): Promise<void>;
+  awardReflex(): Promise<void>;
 }
 const Context = createContext<PlayerContextValue | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
@@ -93,14 +104,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         .catch((e) => setError(String(e)));
     };
     const off = session.bridge.on("POI_DISCOVERED", (id) => {
-      if (!current.current || current.current.discoveredPois?.includes(id))
-        return;
-      current.current = {
-        ...current.current,
-        discoveredPois: [...(current.current.discoveredPois ?? []), id],
-      };
+      if (!current.current) return;
+      const result = recordDiscovery(current.current, id);
+      if (!result.isNew) return;
+      current.current = result.save;
       last = "";
       flush();
+      session.bridge.emit("POI_DISCOVERY_NEW", id);
     });
     const timer = window.setInterval(flush, 1000);
     window.addEventListener("pagehide", flush);
@@ -193,6 +203,33 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       pending.current = false;
     }
   }
+  async function updateCase(transform: (data: GameSave) => GameSave) {
+      if (!current.current) throw new Error("Please log in before investigating.");
+      await commit(transform(current.current));
+    }
+  async function beginCase(id: string) {
+      const definition = cases.find((item) => item.id === id);
+      if (!definition) throw new Error("That case is not available.");
+      await updateCase((data) => startCase(data, definition));
+    }
+  async function collectClueAction(caseId: string, clueId: string) {
+      if (!current.current) throw new Error("Please log in before investigating.");
+      const result = collectClue(current.current, caseId, clueId);
+      if (result.isNew) await commit(result.save);
+      return result.isNew;
+    }
+  async function completeCaseStageAction(caseId: string, stageId: string) {
+      await updateCase((data) => completeStage(data, caseId, stageId));
+    }
+  async function finishCase(caseId: string) {
+      const definition = cases.find((item) => item.id === caseId);
+      if (!definition) throw new Error("That case is not available.");
+      await updateCase((data) => completeCase(data, definition));
+    }
+  async function caseHint(caseId: string) { await updateCase((data) => consumeCaseHint(data, caseId)); }
+  async function pinCase(caseId: string, pinned: boolean) { await updateCase((data) => setCasePinned(data, caseId, pinned)); }
+  async function recordCaseMiniGame(caseId: string, gameId: string, result: "SUCCESS" | "FAILED" | "CANCELLED") { await updateCase((data) => recordMiniGameResult(data, caseId, gameId, result)); }
+  async function awardReflexActivity() { await updateCase(awardReflex); }
   return (
     <Context.Provider
       value={{
@@ -206,6 +243,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         reset,
         activate,
         submit,
+        startCase: beginCase,
+        collectClue: collectClueAction,
+        completeCaseStage: completeCaseStageAction,
+        finishCase,
+        caseHint,
+        pinCase,
+        recordCaseMiniGame,
+        awardReflex: awardReflexActivity,
       }}
     >
       {children}

@@ -16,6 +16,12 @@ import { DebugPanel } from "./debug-panel";
 import { CampusNavigation } from "./campus-navigation";
 import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
+import { currentObjective } from "@/game/quests/objectives";
+import { QrScanner } from "./qr-scanner";
+import { QrVerificationProvider } from "@/game/verification/qr-verification";
+import { locations as campusLocations } from "@/game/data/campus/pois";
+import { CaseInteraction } from "./case-interaction";
+import { cases } from "@/game/cases/data";
 function CampusGame() {
   const { save, session, activate, error } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -26,6 +32,9 @@ function CampusGame() {
   const [message, setMessage] = useState("");
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [debug, setDebug] = useState(false);
+  const [discovery, setDiscovery] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [caseLocation, setCaseLocation] = useState<string | null>(null);
   useEffect(() => {
     const update = () => setDebug(isDebugMode(window.location.search));
     update();
@@ -37,7 +46,17 @@ function CampusGame() {
   const quest = quests.find((q) => q.locationId === nearby);
   const selected = quests.find((q) => q.id === active);
   const interact = useCallback(async () => {
-    if (active || showCompletion || transit || mapOpen) return;
+    if (active || showCompletion || transit || mapOpen || caseLocation) return;
+    const caseProgress = save!.cases?.[cases[0].id];
+    const caseStage = caseProgress && cases[0].stages[caseProgress.currentStage];
+    if (
+      nearby &&
+      ((nearby === "gate" && (!caseProgress || caseProgress.status === "AVAILABLE")) ||
+        (caseStage?.locationId === nearby))
+    ) {
+      setCaseLocation(nearby);
+      return;
+    }
     if (!quest && connection) {
       setTransit(connection);
       return;
@@ -50,7 +69,7 @@ function CampusGame() {
     } catch (e) {
       setMessage((e as Error).message);
     }
-  }, [quest, active, activate, showCompletion, connection, transit, mapOpen]);
+  }, [quest, active, activate, showCompletion, connection, transit, mapOpen, caseLocation, nearby, save]);
   useEffect(() => {
     const off3 = session.bridge.on("CONNECTION_AVAILABLE", setConnection);
     const off4 = session.bridge.on("MAP_TOGGLE", () =>
@@ -84,7 +103,7 @@ function CampusGame() {
       Boolean(active) || showCompletion || Boolean(transit) || mapOpen,
     );
     return () => session.bridge.emit("PAUSE_CHANGED", false);
-  }, [session, active, showCompletion, transit, mapOpen]);
+  }, [session, active, showCompletion, transit, mapOpen, caseLocation]);
   useEffect(() => {
     const toggleMap = (event: KeyboardEvent) => {
       if (
@@ -114,6 +133,28 @@ function CampusGame() {
       quests.find((q) => save!.quests[q.id]?.status !== "COMPLETED")
         ?.locationId,
   );
+  const objective = currentObjective(save!);
+  const scanLibrary = useCallback(
+    async (payload: string) => {
+      const location = campusLocations.find((item) => item.id === "library");
+      if (!location) return;
+      const result = await new QrVerificationProvider().verify(location, payload);
+      setScannerOpen(false);
+      setMessage(
+        result.verified
+          ? "Library checkpoint verified. You can still complete the Knowledge Key normally."
+          : result.reason ?? "This QR code could not be verified.",
+      );
+    },
+    [],
+  );
+  useEffect(() => {
+    const off = session.bridge.on("POI_DISCOVERY_NEW", (id) => {
+      setDiscovery(id);
+      window.setTimeout(() => setDiscovery((current) => (current === id ? null : current)), 3600);
+    });
+    return off;
+  }, [session]);
   return (
     <main className="game-page">
       <header className="game-hud">
@@ -207,6 +248,26 @@ function CampusGame() {
             ))}
           </div>
         </aside>
+        {save!.cases?.[cases[0].id]?.pinned && (
+          <aside className="case-pinned-card" aria-live="polite">
+            <span className="eyebrow">ACTIVE CASE LEAD</span>
+            <strong>{cases[0].title}</strong>
+            <span>{cases[0].stages[save!.cases[cases[0].id].currentStage]?.objective}</span>
+            <Link href="/cases">Open case board →</Link>
+          </aside>
+        )}
+        {objective && (
+          <aside className="objective-card" aria-live="polite">
+            <span className="eyebrow">CURRENT OBJECTIVE</span>
+            <strong>{objective.title}</strong>
+            <span>{objective.locationName}</span>
+            <small>
+              {objective.building} · {objective.floor}
+              <br />
+              {objective.guidance}
+            </small>
+          </aside>
+        )}
         <div className="north-indicator" aria-hidden="true">
           N<br />↑
         </div>
@@ -235,6 +296,11 @@ function CampusGame() {
                   ? "Choose floor"
                   : "Investigate"}
             </button>
+            {nearby === "library" && (
+              <button className="secondary qr-action" onClick={() => setScannerOpen(true)}>
+                Scan Library QR
+              </button>
+            )}
           </div>
         )}
         {(message || error) && (
@@ -242,7 +308,26 @@ function CampusGame() {
             {message || error}
           </p>
         )}
+        {discovery && (() => {
+          const location = locations.find((item) => item.id === discovery);
+          return location ? (
+            <div className="discovery-toast" role="status">
+              <span className="eyebrow">LOCATION DISCOVERED</span>
+              <strong>{location.name}</strong>
+              <span>{buildingName(location.buildingId)} · {location.floor}</span>
+            </div>
+          ) : null;
+        })()}
       </section>
+      {scannerOpen && (
+        <Modal title="Scan Library checkpoint" onClose={() => setScannerOpen(false)}>
+          <span className="eyebrow">REAL-WORLD CHECKPOINT · EXPERIMENTAL</span>
+          <h1>Scan Library QR</h1>
+          <p className="muted">Camera access starts only after choosing this action. Static test codes can be copied.</p>
+          <QrScanner onScan={(payload) => void scanLibrary(payload)} onClose={() => setScannerOpen(false)} />
+        </Modal>
+      )}
+      {caseLocation && <CaseInteraction locationId={caseLocation} onClose={() => setCaseLocation(null)} />}
       <footer className="game-footer">
         <span>
           <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}

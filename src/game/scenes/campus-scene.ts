@@ -13,7 +13,7 @@ import {
 } from "@/game/data/campus/index";
 import { drawFloor } from "@/game/rendering/campus-renderer";
 import type { GameSession } from "@/game/core/session";
-import { normalizedDirection } from "@/game/movement/position-provider";
+import { facingDirection, normalizedDirection } from "@/game/movement/position-provider";
 import type { WorldPosition } from "@/types/game";
 
 /** Scene owns drawing, Arcade physics and proximity prompts, never quest rewards. */
@@ -25,6 +25,7 @@ export class CampusScene extends Phaser.Scene {
   private nearby: string | null = null;
   private nearestConnection: string | null = null;
   private travelling = false;
+  private moving = false;
   private disposers: (() => void)[] = [];
   private markerLabels = new Map<string, Phaser.GameObjects.Text>();
   constructor(private session: GameSession) {
@@ -254,13 +255,27 @@ export class CampusScene extends Phaser.Scene {
               Number(down("W") || down("UP")) +
               this.touch.y,
           );
+    this.moving = direction.x !== 0 || direction.y !== 0;
+    const targetX = direction.x * WORLD.speed;
+    const targetY = direction.y * WORLD.speed;
+    const acceleration = 1800;
+    const delta = acceleration * (this.game.loop.delta / 1000);
+    const moveTowards = (current: number, target: number) =>
+      Math.abs(target - current) <= delta
+        ? target
+        : current + Math.sign(target - current) * delta;
     this.player.setVelocity(
-      direction.x * WORLD.speed,
-      direction.y * WORLD.speed,
+      moveTowards(this.player.body!.velocity.x, targetX),
+      moveTowards(this.player.body!.velocity.y, targetY),
     );
     // A retiring scene must not overwrite the destination landing during restart.
     if (this.travelling) return;
     if (direction.x) this.player.setFlipX(direction.x < 0);
+    // The procedural avatar has no rear-facing frame; keep its body upright rather
+    // than rotating it upside down while still tracking the movement direction.
+    this.player.setAngle(0);
+    this.player.setData("facing", facingDirection(direction.x, direction.y));
+    this.player.setScale(this.moving ? 1 + Math.sin(this.time.now / 90) * 0.025 : 1);
     const position = { x: this.player.x, y: this.player.y };
     const floorId = this.session.position.getWorldLocation().floorId;
     this.session.position.updateWorldLocation({
