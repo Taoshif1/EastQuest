@@ -49,7 +49,7 @@ interface PlayerContextValue {
   pinCase(caseId: string, pinned: boolean): Promise<void>;
   recordCaseMiniGame(caseId: string, gameId: string, result: "SUCCESS" | "FAILED" | "CANCELLED"): Promise<void>;
   awardReflex(): Promise<void>;
-  recordActivity(id: string, score: number, completed: boolean): Promise<{ score: number; completed: boolean; newAchievementIds: string[] }>;
+  recordActivity(id: string, score: number, completed: boolean): Promise<{ score: number; completed: boolean; newAchievementIds: string[]; newMedal?: string }>;
   discoverRumor(id: string): Promise<boolean>;
   setSpecialty(specialty: GameSave["profile"]["specialty"]): Promise<void>;
   discoverHidden(id: string): Promise<boolean>;
@@ -260,6 +260,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       score: result.score,
       completed: result.completed,
       newAchievementIds: result.newAchievementIds,
+      newMedal: result.newMedal,
     };
   }
   async function discoverRumorAction(id: string) {

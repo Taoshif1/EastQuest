@@ -1500,6 +1500,85 @@ kbd {
   letter-spacing: 2px;
   color: var(--gold);
 }
+.activity-instructions {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.difficulty-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.difficulty-select select {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--text);
+  background: #162a2b;
+}
+.code-challenge {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #b8e7d0;
+  background: #0d171d;
+  font: 14px/1.6 var(--mono);
+}
+.route-nodes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.route-nodes button,
+.memory-grid span {
+  min-width: 88px;
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  background: #162a2b;
+}
+.route-nodes button.selected {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.budget-challenge label {
+  display: grid;
+  grid-template-columns: 110px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+}
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.memory-grid span {
+  display: grid;
+  place-items: center;
+  padding: 16px 8px;
+  font: 14px var(--mono);
+}
+.observation-state {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+}
+.observation-state p {
+  margin: 0;
+}
 .dialogue-panel {
   display: grid;
   gap: 8px;

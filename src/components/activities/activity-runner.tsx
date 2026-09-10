@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityDefinition } from "@/types/game";
-import { penaltyScore } from "@/game/activities";
+import { penaltyScore, validBudget, validRoute } from "@/game/activities";
 
 type Props = {
   activity: ActivityDefinition;
@@ -21,9 +21,14 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
   const [keeper, setKeeper] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [reaction, setReaction] = useState<"ready" | "waiting" | "go" | "done">("ready");
+  const current = activity.rounds[round] ?? activity.rounds[0];
+  const [difficulty, setDifficulty] = useState(activity.difficulty ?? "NORMAL");
+  const [route, setRoute] = useState<string[]>([]);
+  const [budget, setBudget] = useState<Record<string, number>>(current?.budget ?? {});
+  const [memoryVisible, setMemoryVisible] = useState(true);
   const startedAt = useRef(0);
   const goTimer = useRef<number | null>(null);
-  const current = activity.rounds[round] ?? activity.rounds[0];
+  const timingWindow = difficulty === "EASY" ? 30 : difficulty === "HARD" ? 12 : 20;
 
   useEffect(() => {
     if (!meterRunning) return;
@@ -41,6 +46,12 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
   useEffect(() => () => {
     if (goTimer.current) window.clearTimeout(goTimer.current);
   }, []);
+
+  useEffect(() => {
+    if (activity.gameType !== "memory") return;
+    const timer = window.setTimeout(() => setMemoryVisible(false), 1800);
+    return () => window.clearTimeout(timer);
+  }, [activity.gameType, round]);
 
   async function finish(value: number) {
     setBusy(true);
@@ -62,6 +73,9 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
       setCorner(null);
       setKeeper(null);
       setReaction("ready");
+      setRoute([]);
+      setBudget(current?.budget ?? {});
+      setMemoryVisible(true);
       setFeedback(null);
       setBusy(false);
       }, 450);
@@ -104,6 +118,23 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
           <span className="eyebrow">{activity.domain} / {activity.gameType}</span>
           <h2 id="activity-runner-title">{activity.title}</h2>
           <p className="muted">{activity.description}</p>
+          <small className="activity-instructions">
+            {activity.gameType === "memory" ? "Remember the pattern. Tap items in the original order." :
+              activity.gameType === "routing" ? "Build SOURCE → INTERMEDIATE → TARGET." :
+              activity.gameType === "budget" ? "Allocate 100 points while meeting every minimum." :
+              activity.gameType === "observation" ? "Compare the two states and identify what changed." :
+              activity.gameType === "cipher" ? "Use the clue and select the decoded fragment." :
+              "Choose an answer, then use the feedback to adjust your next move."}
+          </small>
+          {activity.domain === "SPORTS" && activity.gameType === "timing" && (
+            <label className="difficulty-select">Difficulty
+              <select value={difficulty} onChange={(event) => setDifficulty(event.target.value as typeof difficulty)}>
+                <option value="EASY">Easy</option>
+                <option value="NORMAL">Normal</option>
+                <option value="HARD">Hard</option>
+              </select>
+            </label>
+          )}
         </div>
         <button className="subtle" onClick={onCancel} disabled={busy}>Exit</button>
       </div>
@@ -119,11 +150,44 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
           </div>
         </div>
       )}
+      {score === null && activity.gameType === "debug" && (
+        <div className="activity-choice">
+          <pre className="code-challenge">{current.code}</pre>
+          <p className="activity-prompt">{current.prompt}</p>
+          <div className="answers">{(current.options ?? []).map((option, index) => <button key={option} onClick={() => answer(index)} disabled={busy}><span>{String.fromCharCode(65 + index)}</span>{option}</button>)}</div>
+        </div>
+      )}
+      {score === null && activity.gameType === "routing" && (
+        <div className="arcade-panel">
+          <p className="activity-prompt">{current.prompt}</p>
+          <div className="route-nodes">{["SOURCE", "SWITCH", "TARGET"].map((node) => <button className={route.includes(node) ? "selected" : ""} key={node} disabled={route.includes(node)} onClick={() => setRoute((items) => [...items, node])}>{node}</button>)}</div>
+          <button className="primary" disabled={route.length !== 3} onClick={() => submitRound(validRoute(route, current.route ?? []) ? 100 : 0)}>Check route</button>
+        </div>
+      )}
+      {score === null && activity.gameType === "budget" && (
+        <div className="arcade-panel budget-challenge">
+          <p className="activity-prompt">{current.prompt}</p>
+          {Object.entries(budget).map(([name, value]) => <label key={name}>{name}: <input aria-label={name} type="range" min="0" max="60" step="5" value={value} onChange={(event) => setBudget((items) => ({ ...items, [name]: Number(event.target.value) }))} /><strong>{value}</strong></label>)}
+          <p>Spent: {Object.values(budget).reduce((sum, value) => sum + value, 0)} / 100</p>
+          <button className="primary" onClick={() => {
+            const valid = validBudget(budget, current.constraints ?? {}, 100);
+            submitRound(valid ? 100 : 0);
+          }}>Submit allocation</button>
+        </div>
+      )}
+      {score === null && (activity.gameType === "memory" || activity.gameType === "observation" || activity.gameType === "cipher") && (
+        <div className="activity-choice">
+          {activity.gameType === "memory" && <div className="memory-grid">{(memoryVisible ? current.items ?? [] : ["?", "?", "?"]).map((item, index) => <span key={`${item}-${index}`}>{item}</span>)}</div>}
+          {activity.gameType === "observation" && <div className="observation-state"><p>Before: {(current.items ?? []).join(" · ")}</p><p>After: {(current.changedItems ?? []).join(" · ")}</p></div>}
+          <p className="activity-prompt">{current.prompt}</p>
+          <div className="answers">{(current.options ?? []).map((option, index) => <button key={option} onClick={() => answer(index)} disabled={busy}>{option}</button>)}</div>
+        </div>
+      )}
       {score === null && activity.gameType === "timing" && (
         <div className="arcade-panel">
           <p className="activity-prompt">{current.prompt}</p>
           <div className="timing-meter" aria-label="Timing meter">
-            <span className="timing-target" />
+            <span className="timing-target" style={{ left: `${50 - timingWindow / 2}%`, width: `${timingWindow}%` }} />
             <span className="timing-marker" style={{ left: `${meter}%` }} />
           </div>
           {!meterRunning ? (

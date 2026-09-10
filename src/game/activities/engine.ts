@@ -61,6 +61,19 @@ export function penaltyScore(corner: string, keeperCorner: string) {
   return corner === keeperCorner ? 0 : 100;
 }
 
+export function validBudget(
+  budget: Record<string, number>,
+  constraints: Record<string, number>,
+  total = 100,
+) {
+  return Object.values(budget).reduce((sum, value) => sum + value, 0) === total &&
+    Object.entries(constraints).every(([name, minimum]) => (budget[name] ?? 0) >= minimum);
+}
+
+export function validRoute(route: string[], expected: string[]) {
+  return route.join("|") === expected.join("|");
+}
+
 const sportIds = ["cricket-boundary-timing", "futsal-penalty", "table-tennis-reaction"];
 
 /** Applies a runner result once and keeps all rewards in the domain layer. */
@@ -97,6 +110,7 @@ export function recordActivityResult(
       ? { ...save.stamps, [definition.id]: save.stamps?.[definition.id] ?? { obtainedAt: now } }
       : save.stamps,
   };
+  const newAchievementIds: string[] = [];
   const medal = definition.domain === "SPORTS" && sportIds.includes(definition.id)
     ? sportMedalForScore(adjustedScore)
     : undefined;
@@ -107,9 +121,12 @@ export function recordActivityResult(
     if (!previousMedal || rank[medal] > rank[previousMedal]) {
       newMedal = medal;
       next = { ...next, sportsMedals: { ...(next.sportsMedals ?? {}), [definition.id]: medal } };
+      if (sportIds.every((id) => next.sportsMedals?.[id])) {
+        next = awardAchievement(next, "sports-all-rounder");
+        if (!save.achievements?.["sports-all-rounder"]) newAchievementIds.push("sports-all-rounder");
+      }
     }
   }
-  const newAchievementIds: string[] = [];
   if (!previous.completed && adjustedCompleted) {
     next = { ...next, xp: next.xp + definition.rewardXp };
     next = awardAchievement(next, "first-activity");

@@ -14,7 +14,7 @@ function SportsHub() {
   async function finish(score: number, completed: boolean) {
     if (!activity) return;
     const result = await recordActivity(activity.id, score, completed);
-    setNotice(result.completed ? "Medal result saved to your collection." : "Run saved. Replay to improve your score.");
+    setNotice(result.newMedal ? `NEW MEDAL: ${result.newMedal}. ${result.completed ? "First-clear reward saved." : "Replay saved."}` : result.completed ? "Game complete. Result saved to your collection." : "Run saved. Replay to improve your score.");
   }
   if (activity) return <main className="content-page"><ActivityRunner activity={activity} onFinish={finish} onCancel={() => setSelected(null)} />{notice && <p className="game-message">{notice}</p>}</main>;
   return (
