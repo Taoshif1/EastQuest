@@ -45,3 +45,9 @@ export function normalizedDirection(x: number, y: number) {
   const length = Math.hypot(x, y);
   return length ? { x: x / length, y: y / length } : { x: 0, y: 0 };
 }
+export type FacingDirection = "up" | "down" | "left" | "right";
+export function facingDirection(x: number, y: number): FacingDirection | null {
+  if (!x && !y) return null;
+  if (Math.abs(x) >= Math.abs(y)) return x < 0 ? "left" : "right";
+  return y < 0 ? "up" : "down";
+}

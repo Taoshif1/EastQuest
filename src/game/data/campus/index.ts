@@ -65,7 +65,18 @@ export function collisionRects(floorId: string): Rect[] {
       }
     }
   }
-  const result = [...f.walls, ...f.objects.filter((o) => o.solid), ...edges];
+  const gameplayObjects = f.objects
+    .filter((o) => o.solid)
+    .map((o) => {
+      const forgiving = o.kind === "punch" || o.kind === "scanner" ? 1 : 4;
+      return {
+        x: o.x + forgiving,
+        y: o.y + forgiving,
+        width: Math.max(2, o.width - forgiving * 2),
+        height: Math.max(2, o.height - forgiving * 2),
+      };
+    });
+  const result = [...f.walls, ...gameplayObjects, ...edges];
   boundaryCache.set(floorId, result);
   return result;
 }
