@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { newGame } from "./quest-engine";
-import { currentObjective, nextFloorsForObjective } from "./objectives";
+import { currentObjective, nextFloorsForObjective, objectiveChoices } from "./objectives";
 import { recordDiscovery } from "./discovery";
 
 const profile = {
@@ -36,6 +36,27 @@ describe("current objective", () => {
     for (const id of ["welcome", "research", "debug", "future", "care"])
       save.quests[id] = { status: "COMPLETED", score: 100, attempts: 1 };
     expect(currentObjective(save)).toBeNull();
+  });
+
+  it("switches the primary HUD objective without changing progression", () => {
+    const save = newGame(profile);
+    save.cases = {
+      "lost-campus-file": {
+        status: "ACTIVE",
+        currentStage: 0,
+        completedStages: [],
+        discoveredClues: [],
+        insightTokens: 0,
+        hintsUsed: 0,
+        pinned: false,
+        choices: [],
+        miniGameResults: {},
+      },
+    };
+    save.trackedObjective = { type: "CASE", id: "lost-campus-file" };
+    expect(currentObjective(save)?.type).toBe("CASE");
+    expect(currentObjective(save)?.title).toBe("The Lost Campus File");
+    expect(objectiveChoices(save).map((choice) => choice.type)).toContain("MAIN");
   });
 
   it("records a discovery once and leaves repeated discoveries unchanged", () => {

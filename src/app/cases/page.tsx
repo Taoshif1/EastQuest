@@ -16,6 +16,8 @@ function CaseBoard() {
     setNotice("Hint unlocked: " + (progress?.hintsUsed === 0 ? "Stories wait above the courtyard." : progress?.hintsUsed === 1 ? "Think about where students borrow books." : "Search the Library in Block B, Fifth Floor."));
   };
   const evidence = clues.filter((clue) => progress?.discoveredClues.includes(clue.id));
+  const foundCount = evidence.length;
+  const completed = progress?.status === "COMPLETED";
   const [reflex, setReflex] = useState(0);
   const [reflexMessage, setReflexMessage] = useState("");
   const playReflex = async () => {
@@ -32,7 +34,8 @@ function CaseBoard() {
         </div>
         <span className={`case-status ${progress?.status ?? "AVAILABLE"}`}>{progress?.status ?? "AVAILABLE"}</span>
       </div>
-      {!active && progress?.status !== "COMPLETED" && <Link className="button primary" href="/game">Find the first fragment in campus →</Link>}
+      {completed && <section className="case-solved" role="status"><span className="eyebrow">CASE SOLVED</span><h2>{definition.title}</h2><p>Investigator Badge · +{definition.rewards.xp} XP</p></section>}
+      {!active && !completed && <Link className="button primary" href="/game">Find the first fragment in campus →</Link>}
       {notice && <p role="status" className="game-message">{notice}</p>}
       {active && <div className="case-actions"><button className="secondary" onClick={() => void requestHint()}>Request hint ({progress?.hintsUsed ?? 0}/3)</button><button className="secondary" onClick={() => void pinCase(definition.id, !progress?.pinned)}>{progress?.pinned ? "Unpin lead" : "Pin lead"}</button></div>}
       <section className="reflex-card"><span className="eyebrow">OPTIONAL ACTIVITY</span><h2>Campus Reflex Challenge</h2><p className="muted">Stop the indicator inside the target zone. This side activity is separate from the case.</p><input aria-label="Reflex timing" type="range" min="0" max="100" value={reflex} onChange={(event) => setReflex(Number(event.target.value))} /><button className="secondary" onClick={() => void playReflex()}>Stop indicator</button>{reflexMessage && <p role="status">{reflexMessage}</p>}</section>
@@ -43,11 +46,11 @@ function CaseBoard() {
           <p>{active ? definition.stages[progress!.currentStage]?.objective : "Start the case when you are ready. Required content is never locked behind a specialty."}</p>
         </div>
         <div>
-          <span className="eyebrow">EVIDENCE</span>
+          <span className="eyebrow">EVIDENCE SET · {foundCount} / {clues.length} FOUND</span>
           <div className="evidence-grid">
             {clues.map((clue) => {
               const found = evidence.some((item) => item.id === clue.id);
-              return <article className={found ? "found" : "unknown"} key={clue.id}><strong>{found ? clue.title : "Unknown evidence"}</strong><span>{found ? clue.description : "A fragment remains undiscovered."}</span>{found && <small>{clue.evidenceText}</small>}</article>;
+              return <article className={found ? "found" : "unknown"} key={clue.id}><strong>{found ? clue.title : "???"}</strong><span>{found ? clue.description : "Important evidence remains undiscovered."}</span>{found ? <small>{clue.evidenceText} · {clue.locationId ?? "case board"}</small> : <small>Unknown fragment</small>}</article>;
             })}
           </div>
         </div>

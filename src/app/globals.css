@@ -1519,6 +1519,42 @@ kbd {
 .dialogue-panel h1 {
   margin: 0;
 }
+.objective-switcher {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+}
+.objective-switcher > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.objective-switcher button {
+  padding: 5px 7px;
+  border: 1px solid #73847b;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 10px;
+}
+.objective-switcher button.selected {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: #493d2866;
+}
+.case-solved {
+  display: grid;
+  gap: 6px;
+  margin: 20px 0;
+  padding: 22px;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  background: #493d2838;
+}
+.case-solved h2,
+.case-solved p {
+  margin: 0;
+}
 .activity-result p {
   color: var(--muted);
 }

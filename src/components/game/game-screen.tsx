@@ -16,7 +16,7 @@ import { DebugPanel } from "./debug-panel";
 import { CampusNavigation, FloorContext } from "./campus-navigation";
 import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
-import { currentObjective } from "@/game/quests/objectives";
+import { currentObjective, objectiveChoices } from "@/game/quests/objectives";
 import { QrScanner } from "./qr-scanner";
 import { QrVerificationProvider } from "@/game/verification/qr-verification";
 import { locations as campusLocations } from "@/game/data/campus/pois";
@@ -26,24 +26,9 @@ import { CampusLifeInteraction } from "./campus-life-interaction";
 import { interactionById } from "@/game/campus-life";
 import { npcById } from "@/game/campus-life";
 import { sideQuestById } from "@/game/campus-life";
-import { activityById } from "@/game/activities";
-
-function interactionAction(id: string | null, hasConnection: boolean) {
-  if (!id) return hasConnection ? "Choose floor" : "Interact";
-  if (id.startsWith("npc:")) return "Talk";
-  const interaction = interactionById(id);
-  if (interaction?.kind === "discovery") return "Investigate";
-  if (interaction?.activityId || activityById(interaction?.activityId ?? "")) return "Play";
-  if (interaction) {
-    const prompt = interaction.prompt.toLowerCase();
-    if (prompt.includes("read") || prompt.includes("note") || prompt.includes("board")) return "Read";
-    if (prompt.includes("collect") || prompt.includes("refill")) return "Collect";
-    return "Inspect";
-  }
-  return hasConnection ? "Choose floor" : "Enter";
-}
+import { interactionAction } from "@/game/campus-life/interaction-labels";
 function CampusGame() {
-  const { save, session, activate, error, markNotificationsRead } = usePlayer();
+  const { save, session, activate, error, markNotificationsRead, setTrackedObjective } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
   const [transit, setTransit] = useState<string | null>(null);
   const [mapOpen, setMapOpen] = useState(false);
@@ -184,6 +169,7 @@ function CampusGame() {
         ?.locationId,
   );
   const objective = currentObjective(save!);
+  const objectiveOptions = objectiveChoices(save!);
   const scanLibrary = useCallback(
     async (payload: string) => {
       const location = campusLocations.find((item) => item.id === "library");
@@ -321,6 +307,26 @@ function CampusGame() {
                 <br />
                 {objective.guidance}
               </small>
+              {objectiveOptions.length > 1 && (
+                <div className="objective-switcher" aria-label="Tracked objective">
+                  <span className="eyebrow">TRACKING</span>
+                  <div>
+                    {objectiveOptions.map((option) => {
+                      const selected = option.type === objective.type && option.id === objective.id;
+                      return (
+                        <button
+                          className={selected ? "selected" : ""}
+                          key={`${option.type}-${option.id}`}
+                          aria-pressed={selected}
+                          onClick={() => void setTrackedObjective({ type: option.type, id: option.id })}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </aside>
           )}
           {save!.cases?.[cases[0].id]?.pinned && (

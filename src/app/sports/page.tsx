@@ -3,7 +3,7 @@ import { useState } from "react";
 import { ActivityRunner } from "@/components/activities/activity-runner";
 import { usePlayer } from "@/components/auth/player-context";
 import { Disclaimer, PageHeader, PlayerGuard } from "@/components/ui/shell";
-import { activities } from "@/game/activities";
+import { activities, sportMedalForScore } from "@/game/activities";
 
 function SportsHub() {
   const { save, recordActivity } = usePlayer();
@@ -26,7 +26,8 @@ function SportsHub() {
       <div className="activity-grid">
         {sports.map((item) => {
           const progress = save!.activities?.[item.id];
-          return <article className={`activity-card ${progress?.completed ? "completed" : ""}`} key={item.id}><div className="activity-card-top"><span className="eyebrow">{item.gameType}</span><span>{progress?.completed ? "✓ MEDAL" : "OPEN"}</span></div><h2>{item.title}</h2><strong>{item.subtitle}</strong><p className="muted">{item.description}</p><div className="activity-card-meta"><span>+{item.rewardXp} XP first clear</span><span>{progress?.bestScore ? `best ${progress.bestScore}` : "new run"}</span></div><button className="primary" onClick={() => { setNotice(""); setSelected(item.id); }}>Play {item.title} →</button></article>;
+          const medal = save!.sportsMedals?.[item.id];
+          return <article className={`activity-card ${progress?.completed ? "completed" : ""}`} key={item.id}><div className="activity-card-top"><span className="eyebrow">{item.gameType}</span><span>{medal ? `${medal} MEDAL` : "OPEN"}</span></div><h2>{item.title}</h2><strong>{item.subtitle}</strong><p className="muted">{item.description}</p><div className="activity-card-meta"><span>+{item.rewardXp} XP first clear</span><span>{progress?.bestScore ? `best ${progress.bestScore} · ${sportMedalForScore(progress.bestScore) ?? "TRY"} ` : "new run"}</span></div><button className="primary" onClick={() => { setNotice(""); setSelected(item.id); }}>Play {item.title} →</button></article>;
         })}
       </div>
       <section className="knowledge-panel"><span className="eyebrow">FAIR PLAY</span><h2>Cricket, penalties, reactions</h2><p className="muted">The runner keeps the same score and stamp rules as the Activities hub. Your best score persists; first clears award XP once.</p></section>
