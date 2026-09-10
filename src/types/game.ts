@@ -80,6 +80,54 @@ export type KnowledgeDomain =
   | "LANGUAGE_HUMANITIES"
   | "GENERAL"
   | "SPORTS";
+export type ActivityDomain =
+  | "ACADEMICS"
+  | "TECH"
+  | "CREATIVE"
+  | "LEADERSHIP"
+  | "WELLBEING"
+  | "SPORTS"
+  | "COMMUNITY";
+export type ActivityGameType = "choice" | "timing" | "penalty" | "reaction";
+export interface ActivityRound {
+  prompt: string;
+  options?: string[];
+  correctIndex?: number;
+  explanation?: string;
+}
+export interface ActivityDefinition {
+  id: string;
+  title: string;
+  domain: ActivityDomain;
+  subtitle: string;
+  description: string;
+  gameType: ActivityGameType;
+  rewardXp: number;
+  locationId?: string;
+  specialty?: KnowledgeDomain;
+  rounds: ActivityRound[];
+  tags: string[];
+  hidden?: boolean;
+}
+export interface ActivityProgress {
+  plays: number;
+  bestScore: number;
+  completed: boolean;
+  lastPlayedAt?: string;
+}
+export interface AchievementDefinition {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+export interface RumorDefinition {
+  id: string;
+  title: string;
+  npc: string;
+  text: string;
+  hint: string;
+}
 export type CaseStatus = "LOCKED" | "AVAILABLE" | "ACTIVE" | "COMPLETED";
 export type CaseStageType =
   | "DISCOVER"
@@ -159,4 +207,8 @@ export interface GameSave {
   collectibles: Record<string, { obtainedAt: string }>;
   cases?: Record<string, CaseProgress>;
   badges?: Record<string, { awardedAt: string }>;
+  activities?: Record<string, ActivityProgress>;
+  achievements?: Record<string, { awardedAt: string }>;
+  stamps?: Record<string, { obtainedAt: string }>;
+  discoveredRumors?: string[];
 }

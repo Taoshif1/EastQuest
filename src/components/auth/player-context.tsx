@@ -19,6 +19,7 @@ import type { GameSave } from "@/types/game";
 import { recordDiscovery } from "@/game/quests/discovery";
 import { cases } from "@/game/cases/data";
 import { awardReflex, collectClue, completeCase, completeStage, recordMiniGameResult, setCasePinned, startCase, useHint as consumeCaseHint } from "@/game/cases/engine";
+import { activityById, discoverRumor, recordActivityResult } from "@/game/activities";
 
 interface PlayerContextValue {
   repositoryMode: "LOCAL" | "SUPABASE";
@@ -39,6 +40,9 @@ interface PlayerContextValue {
   pinCase(caseId: string, pinned: boolean): Promise<void>;
   recordCaseMiniGame(caseId: string, gameId: string, result: "SUCCESS" | "FAILED" | "CANCELLED"): Promise<void>;
   awardReflex(): Promise<void>;
+  recordActivity(id: string, score: number, completed: boolean): Promise<{ score: number; completed: boolean; newAchievementIds: string[] }>;
+  discoverRumor(id: string): Promise<boolean>;
+  setSpecialty(specialty: GameSave["profile"]["specialty"]): Promise<void>;
 }
 const Context = createContext<PlayerContextValue | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
@@ -230,6 +234,31 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   async function pinCase(caseId: string, pinned: boolean) { await updateCase((data) => setCasePinned(data, caseId, pinned)); }
   async function recordCaseMiniGame(caseId: string, gameId: string, result: "SUCCESS" | "FAILED" | "CANCELLED") { await updateCase((data) => recordMiniGameResult(data, caseId, gameId, result)); }
   async function awardReflexActivity() { await updateCase(awardReflex); }
+  async function recordActivityAction(id: string, score: number, completed: boolean) {
+    if (!current.current) throw new Error("Please log in before playing activities.");
+    const definition = activityById(id);
+    if (!definition) throw new Error("That activity is not available.");
+    const result = recordActivityResult(current.current, definition, score, completed);
+    await commit(result.save);
+    return {
+      score: result.score,
+      completed: result.completed,
+      newAchievementIds: result.newAchievementIds,
+    };
+  }
+  async function discoverRumorAction(id: string) {
+    if (!current.current) throw new Error("Please log in before exploring rumors.");
+    const result = discoverRumor(current.current, id);
+    if (result.isNew) await commit(result.save);
+    return result.isNew;
+  }
+  async function setSpecialty(specialty: GameSave["profile"]["specialty"]) {
+    if (!current.current) throw new Error("Please log in before changing your focus.");
+    await commit({
+      ...current.current,
+      profile: { ...current.current.profile, specialty },
+    });
+  }
   return (
     <Context.Provider
       value={{
@@ -251,6 +280,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         pinCase,
         recordCaseMiniGame,
         awardReflex: awardReflexActivity,
+        recordActivity: recordActivityAction,
+        discoverRumor: discoverRumorAction,
+        setSpecialty,
       }}
     >
       {children}

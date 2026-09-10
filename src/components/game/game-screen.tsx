@@ -184,6 +184,9 @@ function CampusGame() {
           </span>
           <span className="keys-word">KEYS</span>
         </Link>
+        <Link href="/activities" className="menu-link" aria-label="Campus activities">
+          ✦
+        </Link>
         <Link
           href="/profile"
           className="menu-link"
@@ -213,7 +216,7 @@ function CampusGame() {
             <span className="live-dot" />
             <div>
               <strong>EWU CAMPUS</strong>
-              <span>CAMPUS EXPLORATION · V0.2</span>
+              <span>CAMPUS EXPLORATION · V0.3B</span>
             </div>
           </div>
           <FloorContext />

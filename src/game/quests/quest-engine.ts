@@ -9,6 +9,7 @@ import type {
 import type { LocationVerificationProvider } from "@/game/verification/location-verification";
 import { progression } from "@/game/progression/progression";
 import { initialCases } from "@/game/cases/engine";
+import { initialActivities } from "@/game/activities/engine";
 
 export function newGame(profile: Profile): GameSave {
   return {
@@ -23,6 +24,10 @@ export function newGame(profile: Profile): GameSave {
     collectibles: {},
     cases: initialCases(),
     badges: {},
+    activities: initialActivities(),
+    achievements: {},
+    stamps: {},
+    discoveredRumors: [],
   };
 }
 /** Pure domain service: prerequisites and rewards live here, never in a modal or scene. */
