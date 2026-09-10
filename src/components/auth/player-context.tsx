@@ -58,6 +58,7 @@ interface PlayerContextValue {
   completeSideQuestStep(questId: string, stepId: string, branch?: string): Promise<boolean>;
   claimDailyChallenge(): Promise<boolean>;
   markNotificationsRead(): Promise<void>;
+  setTrackedObjective(objective: GameSave["trackedObjective"]): Promise<void>;
 }
 const Context = createContext<PlayerContextValue | null>(null);
 export function PlayerProvider({ children }: { children: ReactNode }) {
@@ -308,6 +309,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (!current.current) return;
     await commit(markNotificationsRead(current.current));
   }
+  async function setTrackedObjectiveAction(
+    objective: GameSave["trackedObjective"],
+  ) {
+    if (!current.current) throw new Error("Please log in before tracking an objective.");
+    await commit({ ...current.current, trackedObjective: objective });
+  }
   return (
     <Context.Provider
       value={{
@@ -338,6 +345,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         completeSideQuestStep: completeSideQuestStepAction,
         claimDailyChallenge: claimDailyChallengeAction,
         markNotificationsRead: markNotificationsReadAction,
+        setTrackedObjective: setTrackedObjectiveAction,
       }}
     >
       {children}

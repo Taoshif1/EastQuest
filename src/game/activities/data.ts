@@ -237,7 +237,7 @@ export const activities: ActivityDefinition[] = [
     description: "Meet the moving ball in the sweet spot and time a clean boundary.",
     gameType: "timing",
     rewardXp: 45,
-    rounds: [{ prompt: "Release the bat inside the gold timing zone.", explanation: "A calm eye and a clean contact make the difference." }],
+    rounds: Array.from({ length: 6 }, (_, index) => ({ prompt: `Delivery ${index + 1}: release the bat inside the gold timing zone.`, explanation: "A calm eye and a clean contact make the difference." })),
     tags: ["arcade", "cricket", "timing"],
   },
   {
@@ -248,7 +248,7 @@ export const activities: ActivityDefinition[] = [
     description: "Pick a corner, watch the keeper, and take your penalty.",
     gameType: "penalty",
     rewardXp: 40,
-    rounds: [{ prompt: "Choose a corner before the keeper commits.", explanation: "Mixing up your approach keeps the keeper guessing." }],
+    rounds: Array.from({ length: 5 }, (_, index) => ({ prompt: `Penalty ${index + 1}: choose a corner before the keeper commits.`, explanation: "Mixing up your approach keeps the keeper guessing." })),
     tags: ["arcade", "futsal"],
   },
   {
@@ -259,7 +259,7 @@ export const activities: ActivityDefinition[] = [
     description: "Wait for the serve signal, then react as quickly as you can.",
     gameType: "reaction",
     rewardXp: 40,
-    rounds: [{ prompt: "Wait for GO, then return the serve.", explanation: "Anticipation is useful; jumping the signal is a fault." }],
+    rounds: Array.from({ length: 3 }, (_, index) => ({ prompt: `Serve ${index + 1}: wait for GO, then return the serve.`, explanation: "Anticipation is useful; jumping the signal is a fault." })),
     tags: ["arcade", "reaction"],
   },
   {
@@ -288,6 +288,7 @@ export const achievements: AchievementDefinition[] = [
   { id: "activity-explorer", title: "Campus Circuit", description: "Complete activities in three different domains.", icon: "◈" },
   { id: "sports-ace", title: "Sports Arcade Ace", description: "Score 80 or higher in any sports activity.", icon: "★" },
   { id: "rumor-keeper", title: "Rumor Keeper", description: "Uncover the Midnight Stairwell story.", icon: "☾" },
+  { id: "three-marks", title: "Mystery Explorer", description: "Complete The Three Marks optional chain.", icon: "⌘" },
 ];
 
 export const rumors: RumorDefinition[] = [

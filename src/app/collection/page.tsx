@@ -108,6 +108,13 @@ function Collection() {
         </div>
         <section className="collection-extras">
           <div>
+            <span className="eyebrow">OPTIONAL SECRET SET</span>
+            <h2>The Three Marks</h2>
+            <p className="muted">
+              {["three-marks-i", "three-marks-ii", "three-marks-iii"].filter((id) => save!.hiddenDiscoveries?.[id]).length} / 3 found · Unknown pieces remain: {["three-marks-i", "three-marks-ii", "three-marks-iii"].filter((id) => !save!.hiddenDiscoveries?.[id]).map(() => "???").join(" ") || "complete"}
+            </p>
+          </div>
+          <div>
             <span className="eyebrow">ACTIVITY STAMPS</span>
             <h2>Small wins, kept</h2>
             <div className="stamp-grid">
@@ -144,7 +151,7 @@ function Collection() {
               })}
             </div>
           </div>
-          {save!.discoveredRumors && save!.discoveredRumors.length > 0 && <div><span className="eyebrow">NPC NOTEBOOK</span><h2>Stories collected</h2><div className="rumor-list">{rumors.filter((rumor) => save!.discoveredRumors?.includes(rumor.id)).map((rumor) => <article className="found" key={rumor.id}><strong>{rumor.title}</strong><span>{rumor.npc} · {rumor.text}</span></article>)}</div></div>}
+          {save!.discoveredRumors && save!.discoveredRumors.length > 0 && <div><span className="eyebrow">NPC NOTEBOOK</span><h2>Stories collected</h2><div className="rumor-list">{rumors.filter((rumor) => save!.discoveredRumors?.includes(rumor.id)).map((rumor) => <article className="found" key={rumor.id}><strong>{rumor.title}</strong><span>{rumor.npc} · {rumor.text}</span><small>{save!.followedRumors?.[rumor.id] ? "FOLLOWED UP" : "DISCOVERED"}</small></article>)}</div></div>}
         </section>
         <Link href="/game" className="button primary">
           Back to campus →

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import { usePlayer } from "@/components/auth/player-context";
 import {
@@ -9,6 +10,7 @@ import {
   sideQuestById,
   sideQuests,
 } from "@/game/campus-life";
+import { activityById } from "@/game/activities";
 
 export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: () => void }) {
   const { save, discoverHidden, discoverRumor, meetNpc, startSideQuest, completeSideQuestStep } = usePlayer();
@@ -19,6 +21,9 @@ export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: ()
   }, [npc, meetNpc, save]);
   if (!save) return null;
   const interaction = interactionById(id);
+  const activity = interaction?.activityId
+    ? activityById(interaction.activityId)
+    : undefined;
   const discovery = interaction?.discoveryId ? discoveryById(interaction.discoveryId) : undefined;
   const active = sideQuests
     .map((quest) => ({ quest, progress: save.sideQuests?.[quest.id] }))
@@ -31,6 +36,15 @@ export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: ()
     .map(sideQuestById)
     .filter((quest) => quest && save.sideQuests?.[quest.id]?.status !== "COMPLETED")
     .filter((quest) => !save.sideQuests?.[quest!.id]) ?? [];
+  const npcQuest = npc?.questIds
+    .map((questId) => sideQuestById(questId))
+    .find(Boolean);
+  const npcProgress = npcQuest ? save.sideQuests?.[npcQuest.id] : undefined;
+  const npcDialogue = npcQuest && npcProgress?.status === "COMPLETED"
+    ? "You followed the whole thread. Thanks for bringing the story back with care."
+    : npcQuest && npcProgress?.status === "ACTIVE"
+      ? `You are on step ${npcProgress.currentStep + 1} of our route. The next lead should be close.`
+      : npc?.greeting;
   const completeCurrent = async () => {
     if (!active) return;
     const progress = save.sideQuests?.[active.quest.id];
@@ -46,7 +60,7 @@ export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: ()
       {npc ? (
         <>
           <span className="eyebrow">{npc.role}</span>
-          <h1>{npc.greeting}</h1>
+          <h1>{npcDialogue}</h1>
           <p className="muted">{npc.bio}</p>
           {npc.rumorIds.map((rumorId) => (
             <button className="secondary" key={rumorId} onClick={async () => {
@@ -67,6 +81,7 @@ export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: ()
             }}>{save.hiddenDiscoveries?.[discovery.id] ? "Already stamped" : interaction.prompt + " →"}</button>
           )}
           {!discovery && <button className="primary" onClick={() => setNotice("Noted in your explorer log. Keep moving when you are ready.")}>{interaction.prompt} →</button>}
+          {activity && <Link className="secondary" href={`/activities?activity=${activity.id}`}>Try {activity.title} →</Link>}
         </>
       ) : null}
       {active && (

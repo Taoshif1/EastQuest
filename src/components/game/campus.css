@@ -124,6 +124,18 @@
   min-height: 34px;
   padding: 7px 10px;
 }
+.interaction-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.interaction-selector button {
+  min-height: 28px;
+  padding: 4px 8px;
+}
 .qr-scanner {
   display: grid;
   gap: 14px;

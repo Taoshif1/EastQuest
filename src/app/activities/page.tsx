@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ActivityRunner } from "@/components/activities/activity-runner";
 import { usePlayer } from "@/components/auth/player-context";
 import { Disclaimer, PageHeader, PlayerGuard } from "@/components/ui/shell";
@@ -11,8 +12,9 @@ const domains = ["ALL", "ACADEMICS", "TECH", "CREATIVE", "LEADERSHIP", "WELLBEIN
 
 function ActivitiesHub() {
   const { save, recordActivity, discoverRumor, claimDailyChallenge } = usePlayer();
+  const searchParams = useSearchParams();
   const [filter, setFilter] = useState<(typeof domains)[number]>("ALL");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(() => searchParams.get("activity"));
   const [notice, setNotice] = useState("");
   const visible = useMemo(
     () =>
