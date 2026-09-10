@@ -3,6 +3,7 @@ import type { PositionProvider } from "@/game/movement/position-provider";
 export interface VerificationResult {
   verified: boolean;
   mode: VerificationMode;
+  code?: string;
   reason?: string;
 }
 /** GPS, QR and vision adapters will provide evidence behind this async contract. */

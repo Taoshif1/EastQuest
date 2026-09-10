@@ -17,6 +17,9 @@ import { CampusNavigation } from "./campus-navigation";
 import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
 import { currentObjective } from "@/game/quests/objectives";
+import { QrScanner } from "./qr-scanner";
+import { QrVerificationProvider } from "@/game/verification/qr-verification";
+import { locations as campusLocations } from "@/game/data/campus/pois";
 function CampusGame() {
   const { save, session, activate, error } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -28,6 +31,7 @@ function CampusGame() {
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [debug, setDebug] = useState(false);
   const [discovery, setDiscovery] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   useEffect(() => {
     const update = () => setDebug(isDebugMode(window.location.search));
     update();
@@ -117,6 +121,20 @@ function CampusGame() {
         ?.locationId,
   );
   const objective = currentObjective(save!);
+  const scanLibrary = useCallback(
+    async (payload: string) => {
+      const location = campusLocations.find((item) => item.id === "library");
+      if (!location) return;
+      const result = await new QrVerificationProvider().verify(location, payload);
+      setScannerOpen(false);
+      setMessage(
+        result.verified
+          ? "Library checkpoint verified. You can still complete the Knowledge Key normally."
+          : result.reason ?? "This QR code could not be verified.",
+      );
+    },
+    [],
+  );
   useEffect(() => {
     const off = session.bridge.on("POI_DISCOVERY_NEW", (id) => {
       setDiscovery(id);
@@ -257,6 +275,11 @@ function CampusGame() {
                   ? "Choose floor"
                   : "Investigate"}
             </button>
+            {nearby === "library" && (
+              <button className="secondary qr-action" onClick={() => setScannerOpen(true)}>
+                Scan Library QR
+              </button>
+            )}
           </div>
         )}
         {(message || error) && (
@@ -275,6 +298,14 @@ function CampusGame() {
           ) : null;
         })()}
       </section>
+      {scannerOpen && (
+        <Modal title="Scan Library checkpoint" onClose={() => setScannerOpen(false)}>
+          <span className="eyebrow">REAL-WORLD CHECKPOINT · EXPERIMENTAL</span>
+          <h1>Scan Library QR</h1>
+          <p className="muted">Camera access starts only after choosing this action. Static test codes can be copied.</p>
+          <QrScanner onScan={(payload) => void scanLibrary(payload)} onClose={() => setScannerOpen(false)} />
+        </Modal>
+      )}
       <footer className="game-footer">
         <span>
           <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}
