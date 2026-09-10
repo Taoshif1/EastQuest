@@ -20,6 +20,8 @@ import { currentObjective } from "@/game/quests/objectives";
 import { QrScanner } from "./qr-scanner";
 import { QrVerificationProvider } from "@/game/verification/qr-verification";
 import { locations as campusLocations } from "@/game/data/campus/pois";
+import { CaseInteraction } from "./case-interaction";
+import { cases } from "@/game/cases/data";
 function CampusGame() {
   const { save, session, activate, error } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -32,6 +34,7 @@ function CampusGame() {
   const [debug, setDebug] = useState(false);
   const [discovery, setDiscovery] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [caseLocation, setCaseLocation] = useState<string | null>(null);
   useEffect(() => {
     const update = () => setDebug(isDebugMode(window.location.search));
     update();
@@ -43,7 +46,17 @@ function CampusGame() {
   const quest = quests.find((q) => q.locationId === nearby);
   const selected = quests.find((q) => q.id === active);
   const interact = useCallback(async () => {
-    if (active || showCompletion || transit || mapOpen) return;
+    if (active || showCompletion || transit || mapOpen || caseLocation) return;
+    const caseProgress = save!.cases?.[cases[0].id];
+    const caseStage = caseProgress && cases[0].stages[caseProgress.currentStage];
+    if (
+      nearby &&
+      ((nearby === "gate" && (!caseProgress || caseProgress.status === "AVAILABLE")) ||
+        (caseStage?.locationId === nearby))
+    ) {
+      setCaseLocation(nearby);
+      return;
+    }
     if (!quest && connection) {
       setTransit(connection);
       return;
@@ -56,7 +69,7 @@ function CampusGame() {
     } catch (e) {
       setMessage((e as Error).message);
     }
-  }, [quest, active, activate, showCompletion, connection, transit, mapOpen]);
+  }, [quest, active, activate, showCompletion, connection, transit, mapOpen, caseLocation, nearby, save]);
   useEffect(() => {
     const off3 = session.bridge.on("CONNECTION_AVAILABLE", setConnection);
     const off4 = session.bridge.on("MAP_TOGGLE", () =>
@@ -90,7 +103,7 @@ function CampusGame() {
       Boolean(active) || showCompletion || Boolean(transit) || mapOpen,
     );
     return () => session.bridge.emit("PAUSE_CHANGED", false);
-  }, [session, active, showCompletion, transit, mapOpen]);
+  }, [session, active, showCompletion, transit, mapOpen, caseLocation]);
   useEffect(() => {
     const toggleMap = (event: KeyboardEvent) => {
       if (
@@ -235,6 +248,14 @@ function CampusGame() {
             ))}
           </div>
         </aside>
+        {save!.cases?.[cases[0].id]?.pinned && (
+          <aside className="case-pinned-card" aria-live="polite">
+            <span className="eyebrow">ACTIVE CASE LEAD</span>
+            <strong>{cases[0].title}</strong>
+            <span>{cases[0].stages[save!.cases[cases[0].id].currentStage]?.objective}</span>
+            <Link href="/cases">Open case board →</Link>
+          </aside>
+        )}
         {objective && (
           <aside className="objective-card" aria-live="polite">
             <span className="eyebrow">CURRENT OBJECTIVE</span>
@@ -306,6 +327,7 @@ function CampusGame() {
           <QrScanner onScan={(payload) => void scanLibrary(payload)} onClose={() => setScannerOpen(false)} />
         </Modal>
       )}
+      {caseLocation && <CaseInteraction locationId={caseLocation} onClose={() => setCaseLocation(null)} />}
       <footer className="game-footer">
         <span>
           <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}

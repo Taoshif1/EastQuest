@@ -140,6 +140,10 @@ export interface CaseProgress {
   completedStages: string[];
   discoveredClues: string[];
   insightTokens: number;
+  hintsUsed: number;
+  pinned: boolean;
+  choices: string[];
+  miniGameResults: Record<string, "SUCCESS" | "FAILED" | "CANCELLED">;
   startedAt?: string;
   completedAt?: string;
 }

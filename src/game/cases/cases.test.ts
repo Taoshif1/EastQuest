@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { newGame } from "@/game/quests/quest-engine";
 import { cases, clues } from "./data";
-import { collectClue, completeCase, initialCases, startCase } from "./engine";
+import { collectClue, completeCase, initialCases, startCase, useHint } from "./engine";
+import { evaluateEvidenceOrder, evaluatePattern } from "./minigames";
 
 const profile = { id: "local:case", studentId: "2023-3-60-901", email: "case@test", displayName: "Case Tester", avatarId: "explorer-01" };
 describe("case and clue foundation", () => {
@@ -35,5 +36,13 @@ describe("case and clue foundation", () => {
     const save = startCase(newGame({ ...profile, specialty: "COMPUTING" }), cases[0]);
     expect(save.profile.specialty).toBe("COMPUTING");
     expect(save.cases?.["lost-campus-file"].status).toBe("ACTIVE");
+  });
+  it("persists layered hint usage and evaluates reusable mini-games", () => {
+    let save = startCase(newGame(profile), cases[0]);
+    save = useHint(save, "lost-campus-file");
+    expect(save.cases?.["lost-campus-file"].hintsUsed).toBe(1);
+    expect(evaluatePattern("triangle", false)).toBe(true);
+    expect(evaluateEvidenceOrder(["courtyard", "library", "final"])).toBe(true);
+    expect(evaluateEvidenceOrder(["library", "courtyard", "final"])).toBe(false);
   });
 });

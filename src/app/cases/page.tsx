@@ -3,24 +3,25 @@ import Link from "next/link";
 import { usePlayer } from "@/components/auth/player-context";
 import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
 import { cases, clues } from "@/game/cases/data";
-import { startCase } from "@/game/cases/engine";
 import { useState } from "react";
 
 function CaseBoard() {
-  const { save } = usePlayer();
+  const { save, caseHint, pinCase, awardReflex } = usePlayer();
   const [notice, setNotice] = useState("");
   const definition = cases[0];
   const progress = save!.cases?.[definition.id];
   const active = progress?.status === "ACTIVE";
-  const begin = async () => {
-    const raw = localStorage.getItem(`eastquest:v1:player:${save!.profile.studentId}`);
-    if (!raw) return;
-    const next = startCase(save!, definition);
-    localStorage.setItem(`eastquest:v1:player:${save!.profile.studentId}`, JSON.stringify(next));
-    setNotice("Case opened. Explore the entry route to find the first fragment.");
-    window.location.reload();
+  const requestHint = async () => {
+    await caseHint(definition.id);
+    setNotice("Hint unlocked: " + (progress?.hintsUsed === 0 ? "Stories wait above the courtyard." : progress?.hintsUsed === 1 ? "Think about where students borrow books." : "Search the Library in Block B, Fifth Floor."));
   };
   const evidence = clues.filter((clue) => progress?.discoveredClues.includes(clue.id));
+  const [reflex, setReflex] = useState(0);
+  const [reflexMessage, setReflexMessage] = useState("");
+  const playReflex = async () => {
+    if (reflex >= 42 && reflex <= 58) { await awardReflex(); setReflexMessage("Target hit. +10 XP and Campus Reflex badge."); }
+    else setReflexMessage("Missed the target. Try again.");
+  };
   return (
     <main className="content-page case-page">
       <div className="page-heading">
@@ -31,8 +32,10 @@ function CaseBoard() {
         </div>
         <span className={`case-status ${progress?.status ?? "AVAILABLE"}`}>{progress?.status ?? "AVAILABLE"}</span>
       </div>
-      {!active && progress?.status !== "COMPLETED" && <button className="primary" onClick={begin}>Open case file →</button>}
+      {!active && progress?.status !== "COMPLETED" && <Link className="button primary" href="/game">Find the first fragment in campus →</Link>}
       {notice && <p role="status" className="game-message">{notice}</p>}
+      {active && <div className="case-actions"><button className="secondary" onClick={() => void requestHint()}>Request hint ({progress?.hintsUsed ?? 0}/3)</button><button className="secondary" onClick={() => void pinCase(definition.id, !progress?.pinned)}>{progress?.pinned ? "Unpin lead" : "Pin lead"}</button></div>}
+      <section className="reflex-card"><span className="eyebrow">OPTIONAL ACTIVITY</span><h2>Campus Reflex Challenge</h2><p className="muted">Stop the indicator inside the target zone. This side activity is separate from the case.</p><input aria-label="Reflex timing" type="range" min="0" max="100" value={reflex} onChange={(event) => setReflex(Number(event.target.value))} /><button className="secondary" onClick={() => void playReflex()}>Stop indicator</button>{reflexMessage && <p role="status">{reflexMessage}</p>}</section>
       <section className="case-board">
         <div className="case-lead">
           <span className="eyebrow">CURRENT LEAD</span>

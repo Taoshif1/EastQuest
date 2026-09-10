@@ -751,6 +751,13 @@ kbd {
 .case-stages b { color: var(--gold); }
 .case-stages span { display: grid; gap: 3px; }
 .case-stages small { color: var(--muted); font-size: 10px; letter-spacing: 1px; }
+.case-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.case-pinned-card { position: absolute; left: 18px; bottom: 18px; z-index: 4; display: grid; gap: 6px; max-width: 230px; padding: 12px; border: 1px solid var(--gold); border-radius: 8px; background: #101b1df2; }
+.case-pinned-card span:not(.eyebrow) { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.case-pinned-card a { color: var(--gold); font-size: 12px; }
+.pattern-sequence { padding: 18px; border: 1px solid var(--gold); color: var(--gold); text-align: center; font-size: 24px; letter-spacing: 8px; }
+.reflex-card { display: grid; gap: 10px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--navy); }
+.reflex-card input { width: 100%; accent-color: var(--gold); }
 @media (max-width: 430px) { .case-board { padding: 16px; } .case-page h1 { font-size: 38px; } }
 .quest-dialog::backdrop {
   background: #07121bcc;

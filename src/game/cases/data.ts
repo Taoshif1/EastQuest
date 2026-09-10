@@ -31,3 +31,6 @@ export const cases: CaseDefinition[] = [
 export function caseById(id: string) {
   return cases.find((item) => item.id === id);
 }
+export function clueById(id: string) {
+  return clues.find((item) => item.id === id);
+}
