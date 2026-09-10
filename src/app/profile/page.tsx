@@ -123,6 +123,10 @@ function Profile() {
             <strong>{Object.values(save!.activities ?? {}).filter((activity) => activity.completed).length}</strong>
             <span>ACTIVITIES COMPLETE</span>
           </div>
+          <div>
+            <strong>{Object.keys(save!.sportsMedals ?? {}).length} / 3</strong>
+            <span>SPORTS MEDALS</span>
+          </div>
         </div>
         <section className="profile-achievements">
           <span className="eyebrow">ACTIVITY ACHIEVEMENTS</span>

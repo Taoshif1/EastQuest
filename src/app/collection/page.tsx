@@ -150,6 +150,19 @@ function Collection() {
                 return <article className={unlocked ? "unlocked" : "locked"} key={achievement.id}><strong>{achievement.icon}</strong><span>{achievement.title}</span><small>{unlocked ? achievement.description : "Keep exploring to reveal this."}</small></article>;
               })}
             </div>
+            <div>
+              <span className="eyebrow">SPORTS MEDALS</span>
+              <h2>{Object.keys(save!.sportsMedals ?? {}).length} / 3 earned</h2>
+              <div className="stamp-grid">
+                {["cricket-boundary-timing", "futsal-penalty", "table-tennis-reaction"].map((id) => (
+                  <article className={save!.sportsMedals?.[id] ? "unlocked" : "locked"} key={id}>
+                    <strong>{save!.sportsMedals?.[id] ? "★" : "?"}</strong>
+                    <span>{save!.sportsMedals?.[id] ?? "Unknown medal"}</span>
+                    <small>{save!.sportsMedals?.[id] ? id.replaceAll("-", " ") : "Play the arcade to reveal it."}</small>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
           {save!.discoveredRumors && save!.discoveredRumors.length > 0 && <div><span className="eyebrow">NPC NOTEBOOK</span><h2>Stories collected</h2><div className="rumor-list">{rumors.filter((rumor) => save!.discoveredRumors?.includes(rumor.id)).map((rumor) => <article className="found" key={rumor.id}><strong>{rumor.title}</strong><span>{rumor.npc} · {rumor.text}</span><small>{save!.followedRumors?.[rumor.id] ? "FOLLOWED UP" : "DISCOVERED"}</small></article>)}</div></div>}
         </section>

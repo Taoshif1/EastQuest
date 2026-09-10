@@ -115,6 +115,7 @@ export interface ActivityProgress {
   completed: boolean;
   lastPlayedAt?: string;
 }
+export type SportMedal = "BRONZE" | "SILVER" | "GOLD";
 export type WorldInteractionKind = "interaction" | "discovery" | "npc" | "quest";
 export interface WorldInteraction {
   id: string;
@@ -298,4 +299,5 @@ export interface GameSave {
   dailyChallenge?: DailyChallengeProgress;
   notifications?: NotificationEvent[];
   trackedObjective?: TrackedObjective;
+  sportsMedals?: Record<string, SportMedal>;
 }

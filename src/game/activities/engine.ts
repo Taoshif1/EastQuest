@@ -1,4 +1,4 @@
-import type { ActivityDefinition, ActivityProgress, GameSave } from "@/types/game";
+import type { ActivityDefinition, ActivityProgress, GameSave, SportMedal } from "@/types/game";
 import { activities, activityById, rumors } from "./data";
 
 export function initialActivities(): Record<string, ActivityProgress> {
@@ -44,7 +44,24 @@ export type ActivityOutcome = {
   completed: boolean;
   newAchievementIds: string[];
   newStamp: boolean;
+  newMedal?: SportMedal;
 };
+
+export const sportMedalThresholds: Array<{ medal: SportMedal; score: number }> = [
+  { medal: "GOLD", score: 90 },
+  { medal: "SILVER", score: 75 },
+  { medal: "BRONZE", score: 60 },
+];
+
+export function sportMedalForScore(score: number): SportMedal | undefined {
+  return sportMedalThresholds.find((item) => score >= item.score)?.medal;
+}
+
+export function penaltyScore(corner: string, keeperCorner: string) {
+  return corner === keeperCorner ? 0 : 100;
+}
+
+const sportIds = ["cricket-boundary-timing", "futsal-penalty", "table-tennis-reaction"];
 
 /** Applies a runner result once and keeps all rewards in the domain layer. */
 export function recordActivityResult(
@@ -80,6 +97,18 @@ export function recordActivityResult(
       ? { ...save.stamps, [definition.id]: save.stamps?.[definition.id] ?? { obtainedAt: now } }
       : save.stamps,
   };
+  const medal = definition.domain === "SPORTS" && sportIds.includes(definition.id)
+    ? sportMedalForScore(adjustedScore)
+    : undefined;
+  let newMedal: SportMedal | undefined;
+  if (medal) {
+    const rank: Record<SportMedal, number> = { BRONZE: 1, SILVER: 2, GOLD: 3 };
+    const previousMedal = next.sportsMedals?.[definition.id];
+    if (!previousMedal || rank[medal] > rank[previousMedal]) {
+      newMedal = medal;
+      next = { ...next, sportsMedals: { ...(next.sportsMedals ?? {}), [definition.id]: medal } };
+    }
+  }
   const newAchievementIds: string[] = [];
   if (!previous.completed && adjustedCompleted) {
     next = { ...next, xp: next.xp + definition.rewardXp };
@@ -114,6 +143,7 @@ export function recordActivityResult(
     completed: adjustedCompleted,
     newAchievementIds,
     newStamp: adjustedCompleted && !save.stamps?.[definition.id],
+    newMedal,
   };
 }
 

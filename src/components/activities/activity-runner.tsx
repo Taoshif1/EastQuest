@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityDefinition } from "@/types/game";
+import { penaltyScore } from "@/game/activities";
 
 type Props = {
   activity: ActivityDefinition;
@@ -142,10 +143,11 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
             ))}
           </div>
           <button className="primary" disabled={!corner} onClick={() => {
+            if (!corner) return;
             const choices = ["Top left", "Top right", "Bottom left", "Bottom right"];
             const picked = choices[round % choices.length];
             setKeeper(picked);
-            submitRound(picked === corner ? 0 : 100);
+            submitRound(penaltyScore(corner, picked));
           }}>Take penalty</button>
           {keeper && <p className="game-message">The keeper dived {keeper}.</p>}
         </div>
