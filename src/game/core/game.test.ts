@@ -191,7 +191,7 @@ describe("LocalGameRepository", () => {
     await repo.save(save);
     await repo.setActiveStudentId(profile.studentId);
     const fresh = new LocalGameRepository(storage);
-    expect(await fresh.load(profile.studentId)).toEqual(save);
+    expect(await fresh.load(profile.studentId)).toEqual({ ...save, sportsMedals: {} });
     expect(await fresh.activeStudentId()).toBe(profile.studentId);
   });
   it("isolates profiles and deletes only the selected save", async () => {

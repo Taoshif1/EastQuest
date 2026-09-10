@@ -106,6 +106,8 @@ export function claimDailyChallenge(save: GameSave, date = new Date()) {
   const challenge = dailyChallenge(date);
   if (save.dailyChallenge?.date === challenge.date && save.dailyChallenge.claimedAt)
     return { save, claimed: false };
+  if (!save.activities?.[challenge.activityId]?.completed)
+    return { save, claimed: false };
   const now = isoNow();
   const reward = 50;
   return {

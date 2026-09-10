@@ -10,13 +10,14 @@ function SportsHub() {
   const sports = activities.filter((activity) => activity.domain === "SPORTS");
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [replay, setReplay] = useState(0);
   const activity = sports.find((item) => item.id === selected);
   async function finish(score: number, completed: boolean) {
     if (!activity) return;
     const result = await recordActivity(activity.id, score, completed);
     setNotice(result.newMedal ? `NEW MEDAL: ${result.newMedal}. ${result.completed ? "First-clear reward saved." : "Replay saved."}` : result.completed ? "Game complete. Result saved to your collection." : "Run saved. Replay to improve your score.");
   }
-  if (activity) return <main className="content-page"><ActivityRunner activity={activity} onFinish={finish} onCancel={() => setSelected(null)} />{notice && <p className="game-message">{notice}</p>}</main>;
+  if (activity) return <main className="content-page"><ActivityRunner key={`${activity.id}-${replay}`} activity={activity} onFinish={finish} onCancel={() => setSelected(null)} onReplay={() => setReplay((value) => value + 1)} />{notice && <p className="game-message">{notice}</p>}</main>;
   return (
     <main className="content-page sports-page">
       <div className="page-heading">
@@ -31,6 +32,7 @@ function SportsHub() {
         })}
       </div>
       <section className="knowledge-panel"><span className="eyebrow">FAIR PLAY</span><h2>Cricket, penalties, reactions</h2><p className="muted">The runner keeps the same score and stamp rules as the Activities hub. Your best score persists; first clears award XP once.</p></section>
+      <section className="knowledge-panel sports-all-rounder"><span className="eyebrow">SPORTS ALL-ROUNDER</span><h2>{Object.keys(save!.sportsMedals ?? {}).length} / 3 medal tracks</h2><p className="muted">Cricket {save!.sportsMedals?.["cricket-boundary-timing"] ? "✓" : "○"} · Penalty {save!.sportsMedals?.["futsal-penalty"] ? "✓" : "○"} · Reaction {save!.sportsMedals?.["table-tennis-reaction"] ? "✓" : "○"}</p></section>
     </main>
   );
 }

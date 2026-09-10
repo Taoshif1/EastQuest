@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activities } from "./data";
-import { discoverRumor, penaltyScore, recordActivityResult, sportMedalForScore, validBudget, validRoute } from "./engine";
+import { discoverRumor, penaltyScore, recordActivityResult, sportMedalForScore, timingScore, validBudget, validRoute } from "./engine";
 import { newGame } from "@/game/quests/quest-engine";
 import { LocalGameRepository, type StoragePort } from "@/game/persistence/game-repository";
 
@@ -40,6 +40,7 @@ describe("campus activity progression", () => {
     expect(migrated!.achievements).toEqual({});
     expect(migrated!.stamps).toEqual({});
     expect(migrated!.discoveredRumors).toEqual([]);
+    expect(migrated!.sportsMedals).toEqual({});
   });
 
   it("awards a stamp, XP, and first activity achievement once", () => {
@@ -126,5 +127,23 @@ describe("campus activity progression", () => {
     expect(activities.find((item) => item.id === "process-order")?.gameType).toBe("memory");
     expect(activities.find((item) => item.id === "evidence-file")?.gameType).toBe("observation");
     expect(activities.find((item) => item.id === "cipher-note")?.gameType).toBe("cipher");
+  });
+
+  it("protects replay XP and personal bests", () => {
+    const activity = activities.find((item) => item.id === "cricket-boundary-timing")!;
+    const first = recordActivityResult(newGame(profile), activity, 70, true);
+    const lower = recordActivityResult(first.save, activity, 55, true);
+    const higher = recordActivityResult(lower.save, activity, 80, true);
+    expect(first.save.xp).toBe(activity.rewardXp);
+    expect(lower.save.xp).toBe(activity.rewardXp);
+    expect(lower.save.activities?.[activity.id].bestScore).toBe(70);
+    expect(higher.save.activities?.[activity.id].bestScore).toBe(80);
+    expect(lower.isReplay).toBe(true);
+    expect(lower.xpAwarded).toBe(0);
+  });
+
+  it("changes timing windows by difficulty without moving the center target", () => {
+    expect(timingScore(50, 30)).toBeGreaterThan(timingScore(70, 12));
+    expect(timingScore(50, 20)).toBe(100);
   });
 });

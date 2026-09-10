@@ -41,10 +41,18 @@ describe("campus life progression", () => {
   it("selects a stable daily challenge and claims its reward once per date", () => {
     const date = new Date("2026-09-10T00:00:00.000Z");
     const challenge = dailyChallenge(date);
-    const first = claimDailyChallenge(newGame(profile), date);
+    const firstSave = newGame(profile);
+    firstSave.activities![challenge.activityId] = { plays: 1, bestScore: 100, completed: true };
+    const first = claimDailyChallenge(firstSave, date);
     const second = claimDailyChallenge(first.save, date);
     expect(challenge.date).toBe("2026-09-10");
     expect(first.claimed).toBe(true);
     expect(second.claimed).toBe(false);
+  });
+  it("does not award the daily bonus before the activity is complete", () => {
+    const save = newGame(profile);
+    const result = claimDailyChallenge(save, new Date("2026-09-10T00:00:00.000Z"));
+    expect(result.claimed).toBe(false);
+    expect(result.save.xp).toBe(0);
   });
 });

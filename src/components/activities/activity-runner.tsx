@@ -2,15 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ActivityDefinition } from "@/types/game";
-import { penaltyScore, validBudget, validRoute } from "@/game/activities";
+import { penaltyScore, timingScore, validBudget, validRoute } from "@/game/activities";
 
 type Props = {
   activity: ActivityDefinition;
   onFinish: (score: number, completed: boolean) => Promise<void>;
   onCancel: () => void;
+  onReplay?: () => void;
 };
 
-export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
+export function ActivityRunner({ activity, onFinish, onCancel, onReplay }: Props) {
   const [round, setRound] = useState(0);
   const [score, setScore] = useState<number | null>(null);
   const [totalScore, setTotalScore] = useState(0);
@@ -193,7 +194,7 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
           {!meterRunning ? (
             <button className="primary" onClick={() => setMeterRunning(true)}>Start meter</button>
           ) : (
-            <button className="primary" onClick={() => submitRound(100 - Math.min(100, Math.abs(meter - 70) * 3))}>Release shot</button>
+            <button className="primary" onClick={() => submitRound(timingScore(meter, timingWindow))}>Release shot</button>
           )}
           <small className="muted">Gold zone: 60–80. Release inside it for a clean shot.</small>
         </div>
@@ -232,10 +233,11 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
       )}
       {score !== null && (
         <div className="activity-result" role="status">
-          <span className="eyebrow">ROUND COMPLETE</span>
+          <span className="eyebrow">GAME COMPLETE</span>
           <strong>{score}<small> / 100</small></strong>
           <p>{score >= 60 ? "Nice run. Your stamp is in the collection." : "Not quite this time. You can replay for a better score."}</p>
           <button className="primary" onClick={onCancel}>Back to activities</button>
+          {onReplay && <button className="secondary" onClick={onReplay}>Replay</button>}
         </div>
       )}
     </section>
