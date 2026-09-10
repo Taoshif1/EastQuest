@@ -28,6 +28,11 @@ export function newGame(profile: Profile): GameSave {
     achievements: {},
     stamps: {},
     discoveredRumors: [],
+    discoveredInteractions: {},
+    hiddenDiscoveries: {},
+    npcsMet: {},
+    sideQuests: {},
+    notifications: [],
   };
 }
 /** Pure domain service: prerequisites and rewards live here, never in a modal or scene. */

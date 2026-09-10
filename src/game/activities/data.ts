@@ -230,6 +230,17 @@ export const activities: ActivityDefinition[] = [
     tags: ["arcade", "basketball"],
   },
   {
+    id: "cricket-boundary-timing",
+    title: "Cricket Boundary Timing",
+    domain: "SPORTS",
+    subtitle: "Practice nets",
+    description: "Meet the moving ball in the sweet spot and time a clean boundary.",
+    gameType: "timing",
+    rewardXp: 45,
+    rounds: [{ prompt: "Release the bat inside the gold timing zone.", explanation: "A calm eye and a clean contact make the difference." }],
+    tags: ["arcade", "cricket", "timing"],
+  },
+  {
     id: "futsal-penalty",
     title: "Futsal Penalty",
     domain: "SPORTS",

@@ -6,6 +6,7 @@ import { KeyIcon } from "@/components/ui/key-icon";
 import { buildingName } from "@/game/data/campus/index";
 import { collectibles, locations } from "@/game/data/campus";
 import { achievements, rumors } from "@/game/activities";
+import { hiddenDiscoveries, npcs } from "@/game/campus-life";
 function Collection() {
   const { save } = usePlayer();
   const count = Object.keys(save!.collectibles).length;
@@ -114,6 +115,23 @@ function Collection() {
                 <article key={id}><strong>✦</strong><span>{id.replaceAll("-", " ")}</span><small>{new Date(stamp.obtainedAt).toLocaleDateString()}</small></article>
               ))}
               {Object.keys(save!.stamps ?? {}).length === 0 && <p className="muted">Play an activity to earn your first stamp.</p>}
+            </div>
+            <div>
+              <span className="eyebrow">HIDDEN DISCOVERY SETS</span>
+              <h2>Field stamps</h2>
+              <div className="stamp-grid">
+                {hiddenDiscoveries.map((item) => {
+                  const found = save!.hiddenDiscoveries?.[item.id];
+                  return <article className={found ? "unlocked" : "locked"} key={item.id}><strong>{found ? "✦" : "◇"}</strong><span>{found ? item.title : "Undiscovered trace"}</span><small>{found ? item.stamp : `${item.set} · explore the world`}</small></article>;
+                })}
+              </div>
+            </div>
+            <div>
+              <span className="eyebrow">CAMPUS CONTACTS</span>
+              <h2>People you met</h2>
+              <div className="achievement-grid">
+                {npcs.map((npc) => <article className={save!.npcsMet?.[npc.id] ? "unlocked" : "locked"} key={npc.id}><strong>{save!.npcsMet?.[npc.id] ? "●" : "?"}</strong><span>{save!.npcsMet?.[npc.id] ? npc.name : "Unknown contact"}</span><small>{save!.npcsMet?.[npc.id] ? npc.role : "Find them on campus."}</small></article>)}
+              </div>
             </div>
           </div>
           <div>

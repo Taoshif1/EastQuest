@@ -5,11 +5,12 @@ import { ActivityRunner } from "@/components/activities/activity-runner";
 import { usePlayer } from "@/components/auth/player-context";
 import { Disclaimer, PageHeader, PlayerGuard } from "@/components/ui/shell";
 import { achievements, activities, rumors } from "@/game/activities";
+import { dailyChallenge } from "@/game/campus-life";
 
 const domains = ["ALL", "ACADEMICS", "TECH", "CREATIVE", "LEADERSHIP", "WELLBEING", "SPORTS", "COMMUNITY"] as const;
 
 function ActivitiesHub() {
-  const { save, recordActivity, discoverRumor } = usePlayer();
+  const { save, recordActivity, discoverRumor, claimDailyChallenge } = usePlayer();
   const [filter, setFilter] = useState<(typeof domains)[number]>("ALL");
   const [selected, setSelected] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
@@ -25,6 +26,9 @@ function ActivitiesHub() {
   const activity = activities.find((item) => item.id === selected);
   const completed = Object.values(save!.activities ?? {}).filter((item) => item.completed).length;
   const unlockedRumors = rumors.filter((rumor) => save!.discoveredRumors?.includes(rumor.id));
+  const daily = dailyChallenge();
+  const dailyActivity = activities.find((item) => item.id === daily.activityId)!;
+  const dailyClaimed = save!.dailyChallenge?.date === daily.date && Boolean(save!.dailyChallenge.claimedAt);
 
   async function finish(score: number, success: boolean) {
     if (!activity) return;
@@ -56,6 +60,10 @@ function ActivitiesHub() {
       <div className="activity-filters" role="group" aria-label="Activity domains">
         {domains.map((domain) => <button className={filter === domain ? "selected" : ""} key={domain} onClick={() => setFilter(domain)}>{domain === "ALL" ? "All" : domain.replace("_", " ")}</button>)}
       </div>
+      <section className="daily-challenge" aria-labelledby="daily-challenge-title">
+        <div><span className="eyebrow">DAILY CHALLENGE / {daily.date}</span><h2 id="daily-challenge-title">{dailyActivity.title}</h2><p className="muted">A deterministic daily pick for every explorer. Complete it once, then claim the safe +50 XP reward.</p></div>
+        <div className="daily-challenge-action">{dailyClaimed ? <strong>✓ CLAIMED TODAY</strong> : <><button className="primary" onClick={() => { setNotice(""); setSelected(dailyActivity.id); }}>Play today&apos;s challenge →</button><button className="secondary" onClick={() => void claimDailyChallenge().then((claimed) => setNotice(claimed ? "Daily reward claimed." : "Today's reward is already claimed."))}>Claim +50 XP</button></>}</div>
+      </section>
       <div className="activity-grid">
         {visible.map((item) => {
           const progress = save!.activities?.[item.id];

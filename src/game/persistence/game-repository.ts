@@ -100,6 +100,17 @@ export class LocalGameRepository implements GameRepository {
         discoveredRumors: Array.isArray(data.discoveredRumors)
           ? data.discoveredRumors.filter((id) => typeof id === "string")
           : [],
+        discoveredInteractions:
+          data.discoveredInteractions && typeof data.discoveredInteractions === "object"
+            ? data.discoveredInteractions
+            : {},
+        hiddenDiscoveries:
+          data.hiddenDiscoveries && typeof data.hiddenDiscoveries === "object"
+            ? data.hiddenDiscoveries
+            : {},
+        npcsMet: data.npcsMet && typeof data.npcsMet === "object" ? data.npcsMet : {},
+        sideQuests: data.sideQuests && typeof data.sideQuests === "object" ? data.sideQuests : {},
+        notifications: Array.isArray(data.notifications) ? data.notifications.slice(-20) : [],
       };
     } catch {
       throw new Error(

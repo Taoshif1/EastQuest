@@ -1222,6 +1222,129 @@ kbd {
   border-color: var(--gold);
   color: #17222b;
 }
+.daily-challenge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  margin: 0 0 25px;
+  padding: 18px 20px;
+  border: 1px solid #716243;
+  border-radius: 9px;
+  background: #202d2d;
+}
+.daily-challenge h2 {
+  margin: 5px 0;
+  font-size: 25px;
+}
+.daily-challenge p {
+  margin: 0;
+  font-size: 12px;
+}
+.daily-challenge-action {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.daily-challenge-action strong {
+  color: var(--gold);
+  white-space: nowrap;
+}
+.quest-board-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.quest-board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--panel);
+}
+.quest-board-card.completed {
+  border-color: #716243;
+}
+.quest-board-card h2 {
+  margin: 7px 0 0;
+}
+.quest-board-card p {
+  font-size: 12px;
+}
+.quest-steps {
+  display: grid;
+  gap: 5px;
+  margin: 5px 0 10px;
+}
+.quest-steps span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.quest-steps span.current {
+  color: var(--cyan);
+}
+.quest-steps span.done {
+  color: var(--gold);
+  text-decoration: line-through;
+}
+.branch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quest-lead {
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid #716243;
+  border-radius: 7px;
+}
+.notification-queue {
+  display: grid;
+  gap: 5px;
+  max-width: 250px;
+  padding: 12px 14px;
+  border: 1px solid #716243;
+  border-radius: 8px;
+  background: #243a35ed;
+  color: #f2efdd;
+}
+.notification-queue > span:not(.eyebrow) {
+  color: #cbd2bd;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.notification-queue button {
+  min-height: 30px;
+  padding: 6px 9px;
+  font-size: 10px;
+}
+.domain-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.domain-progress-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.domain-progress-grid span,
+.domain-progress-grid strong {
+  font-size: 10px;
+  letter-spacing: .7px;
+}
+.domain-progress-grid strong {
+  color: var(--gold);
+}
+.domain-progress-grid progress {
+  width: 100%;
+  height: 5px;
+}
 .activity-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1493,6 +1616,21 @@ kbd {
   .landing-footer {
     flex-direction: column;
     gap: 10px;
+  }
+  .daily-challenge {
+    display: grid;
+  }
+  .daily-challenge-action {
+    justify-content: stretch;
+  }
+  .daily-challenge-action > * {
+    flex: 1;
+  }
+  .quest-board-grid {
+    grid-template-columns: 1fr;
+  }
+  .domain-progress-grid {
+    grid-template-columns: 1fr;
   }
   .game-hud {
     height: 76px;

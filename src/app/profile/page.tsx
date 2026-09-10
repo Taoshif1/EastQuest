@@ -9,6 +9,7 @@ import { FeedbackDialog } from "@/components/ui/feedback-dialog";
 import { APP_VERSION, RELEASE_LABEL } from "@/lib/app-info";
 import { achievements } from "@/game/activities";
 import type { KnowledgeDomain } from "@/types/game";
+import { activities } from "@/game/activities";
 const specialties: Array<KnowledgeDomain | undefined> = [
   undefined,
   "COMPUTING",
@@ -26,6 +27,12 @@ function Profile() {
   const [error, setError] = useState("");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const xp = progression(save!.xp);
+  const rank = xp.level >= 10 ? "Campus Cartographer" : xp.level >= 5 ? "Route Keeper" : "New Explorer";
+  const domainProgress = Array.from(new Set(activities.map((item) => item.domain))).map((domain) => ({
+    domain,
+    done: activities.filter((item) => item.domain === domain && save!.activities?.[item.id]?.completed).length,
+    total: activities.filter((item) => item.domain === domain).length,
+  }));
   return (
     <>
       <PageHeader />
@@ -127,6 +134,11 @@ function Profile() {
           Progress lives in this browser. Use the same student ID to return to
           your collection.
         </p>
+        <section className="profile-achievements">
+          <span className="eyebrow">EXPLORER RANK / DOMAIN PROGRESS</span>
+          <h2>{rank}</h2>
+          <div className="domain-progress-grid">{domainProgress.map((item) => <div key={item.domain}><span>{item.domain}</span><strong>{item.done} / {item.total}</strong><progress value={item.done} max={item.total} /></div>)}</div>
+        </section>
         <div className="profile-actions">
           <button onClick={() => setFeedbackOpen(true)}>
             Playtest feedback
