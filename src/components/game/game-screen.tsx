@@ -26,6 +26,22 @@ import { CampusLifeInteraction } from "./campus-life-interaction";
 import { interactionById } from "@/game/campus-life";
 import { npcById } from "@/game/campus-life";
 import { sideQuestById } from "@/game/campus-life";
+import { activityById } from "@/game/activities";
+
+function interactionAction(id: string | null, hasConnection: boolean) {
+  if (!id) return hasConnection ? "Choose floor" : "Interact";
+  if (id.startsWith("npc:")) return "Talk";
+  const interaction = interactionById(id);
+  if (interaction?.kind === "discovery") return "Investigate";
+  if (interaction?.activityId || activityById(interaction?.activityId ?? "")) return "Play";
+  if (interaction) {
+    const prompt = interaction.prompt.toLowerCase();
+    if (prompt.includes("read") || prompt.includes("note") || prompt.includes("board")) return "Read";
+    if (prompt.includes("collect") || prompt.includes("refill")) return "Collect";
+    return "Inspect";
+  }
+  return hasConnection ? "Choose floor" : "Enter";
+}
 function CampusGame() {
   const { save, session, activate, error, markNotificationsRead } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -344,9 +360,15 @@ function CampusGame() {
           <div className="interaction-card" aria-live="polite">
             <div>
               <span className="eyebrow">
-                {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
-                  ? "LOCATION COMPLETE"
-                  : "LOCATION DISCOVERED"}
+                {nearby?.startsWith("npc:")
+                  ? "CAMPUS CONTACT"
+                  : interactionById(nearby ?? "")?.kind === "discovery"
+                    ? "UNUSUAL DETAIL"
+                    : interactionById(nearby ?? "")?.activityId
+                      ? "CAMPUS ACTIVITY"
+                      : save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
+                        ? "LOCATION COMPLETE"
+                        : "CAMPUS INTERACTION"}
               </span>
               <strong>
                 {locations.find((l) => l.id === nearby)?.name ??
@@ -381,9 +403,7 @@ function CampusGame() {
               <kbd>E</kbd>{" "}
               {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
                 ? "View key"
-                : connection && !nearby
-                  ? "Choose floor"
-                  : nearby?.startsWith("npc:") ? "Talk" : "Investigate"}
+                : interactionAction(nearby, Boolean(connection && !nearby))}
             </button>
             {nearby === "library" && (
               <button className="secondary qr-action" onClick={() => setScannerOpen(true)}>
@@ -417,7 +437,7 @@ function CampusGame() {
         </Modal>
       )}
       {caseLocation && <CaseInteraction locationId={caseLocation} onClose={() => setCaseLocation(null)} />}
-      {lifeInteraction && <CampusLifeInteraction id={lifeInteraction} onClose={() => setLifeInteraction(null)} />}
+      {lifeInteraction && <CampusLifeInteraction key={lifeInteraction} id={lifeInteraction} onClose={() => setLifeInteraction(null)} />}
       <footer className="game-footer">
         <span>
           <kbd>W A S D</kbd> / <kbd>↑ ← ↓ →</kbd> MOVE{" "}

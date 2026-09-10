@@ -25,6 +25,7 @@ import {
 /** Scene owns drawing, Arcade physics and proximity prompts, never quest rewards. */
 export class CampusScene extends Phaser.Scene {
   private player!: Phaser.Physics.Arcade.Sprite;
+  private playerShadow!: Phaser.GameObjects.Ellipse;
   private keys!: Record<string, Phaser.Input.Keyboard.Key>;
   private touch: WorldPosition = { x: 0, y: 0 };
   private paused = false;
@@ -52,6 +53,9 @@ export class CampusScene extends Phaser.Scene {
     this.player = this.physics.add
       .sprite(start.x, start.y, "explorer")
       .setDepth(20);
+    this.playerShadow = this.add
+      .ellipse(start.x, start.y + 22, 30, 9, 0x0c211f, 0.32)
+      .setDepth(19);
     this.player.setCollideWorldBounds(true).setSize(18, 18).setOffset(11, 16);
     const walls = this.physics.add.staticGroup();
     collisionRects(floorId).forEach((b) => {
@@ -250,12 +254,23 @@ export class CampusScene extends Phaser.Scene {
     worldInteractions
       .filter((item) => item.floorId === floorId)
       .forEach((item) => {
-        const color = item.kind === "discovery" ? 0xf1bd6c : 0x86c5ca;
+        const color =
+          item.kind === "discovery"
+            ? 0xf1bd6c
+            : item.activityId
+              ? 0x9ad3d2
+              : 0x86c5ca;
         this.add
           .circle(item.position.x, item.position.y, 12, color, 0.75)
           .setStrokeStyle(2, 0xf6f4e7, 0.85)
           .setDepth(8);
-        this.label(item.position.x, item.position.y - 24, item.kind === "discovery" ? "✦" : "•", 14, "#fff0c4").setDepth(8);
+        this.label(
+          item.position.x,
+          item.position.y - 24,
+          item.kind === "discovery" ? "✦" : item.activityId ? "▶" : "•",
+          14,
+          "#fff0c4",
+        ).setDepth(8);
       });
     npcs
       .filter((npc) => npc.floorId === floorId)
@@ -293,7 +308,6 @@ export class CampusScene extends Phaser.Scene {
   private createAvatar() {
     if (this.textures.exists("explorer")) return;
     const g = this.make.graphics({ x: 0, y: 0 });
-    g.fillStyle(0x0c211f, 0.5).fillEllipse(20, 43, 29, 10);
     g.fillStyle(0x172b38)
       .fillRoundedRect(10, 29, 8, 14, 2)
       .fillRoundedRect(23, 29, 8, 14, 2);
@@ -336,6 +350,10 @@ export class CampusScene extends Phaser.Scene {
     );
     // A retiring scene must not overwrite the destination landing during restart.
     if (this.travelling) return;
+    this.playerShadow
+      .setPosition(this.player.x, this.player.y + 22)
+      .setScale(this.moving ? 1.08 : 1, this.moving ? 0.86 : 1)
+      .setAlpha(this.moving ? 0.38 : 0.3);
     if (direction.x) this.player.setFlipX(direction.x < 0);
     // The procedural avatar has no rear-facing frame; keep its body upright rather
     // than rotating it upside down while still tracking the movement direction.

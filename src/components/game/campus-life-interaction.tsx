@@ -15,6 +15,7 @@ import { activityById } from "@/game/activities";
 export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: () => void }) {
   const { save, discoverHidden, discoverRumor, meetNpc, startSideQuest, completeSideQuestStep } = usePlayer();
   const [notice, setNotice] = useState("");
+  const [revealed, setRevealed] = useState(false);
   const npc = id.startsWith("npc:") ? npcById(id.slice(4)) : undefined;
   useEffect(() => {
     if (npc && save) void meetNpc(npc.id);
@@ -60,9 +61,15 @@ export function CampusLifeInteraction({ id, onClose }: { id: string; onClose: ()
       {npc ? (
         <>
           <span className="eyebrow">{npc.role}</span>
-          <h1>{npcDialogue}</h1>
+          <div className="dialogue-panel" aria-live="polite">
+            <p className="dialogue-speaker">{npc.name}</p>
+            <h1>{revealed ? npcDialogue : "..."}</h1>
+            <button className="secondary" onClick={() => setRevealed(true)}>
+              {revealed ? "Continue conversation" : "Listen"}
+            </button>
+          </div>
           <p className="muted">{npc.bio}</p>
-          {npc.rumorIds.map((rumorId) => (
+          {revealed && npc.rumorIds.map((rumorId) => (
             <button className="secondary" key={rumorId} onClick={async () => {
               const found = await discoverRumor(rumorId);
               setNotice(found ? "Rumor added to your notebook." : "You already have that story.");
