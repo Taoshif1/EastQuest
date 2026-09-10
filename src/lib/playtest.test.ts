@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { APP_VERSION, isDebugMode } from "./app-info";
 import { serializeFeedback } from "./feedback";
-import {
-  locations,
-  quests,
-  collectibles,
-  buildings,
-  WORLD,
-} from "@/game/data/campus";
+import { locations, quests, collectibles, WORLD } from "@/game/data/campus";
+import { walkable } from "@/game/data/campus/index";
 import { MiniGameRegistry } from "@/game/minigames/registry";
 import manifest from "@/app/manifest";
 import { version } from "../../package.json";
@@ -105,22 +100,14 @@ describe("release and content integrity", () => {
     };
     quests.forEach((q) => visit(q.id, []));
   });
-  it("keeps markers in bounds and outside solid building footprints", () => {
+  it("keeps markers in bounds and on walkable floor geometry", () => {
     for (const l of locations) {
       expect(l.interactionRadius).toBeGreaterThan(0);
       expect(l.worldPosition.x).toBeGreaterThanOrEqual(0);
       expect(l.worldPosition.x).toBeLessThanOrEqual(WORLD.width);
       expect(l.worldPosition.y).toBeGreaterThanOrEqual(0);
       expect(l.worldPosition.y).toBeLessThanOrEqual(WORLD.height);
-      expect(
-        buildings.some(
-          (b) =>
-            l.worldPosition.x >= b.x &&
-            l.worldPosition.x <= b.x + b.width &&
-            l.worldPosition.y >= b.y &&
-            l.worldPosition.y <= b.y + b.height,
-        ),
-      ).toBe(false);
+      expect(walkable(l.floorId, l.worldPosition)).toBe(true);
     }
   });
 });

@@ -1,4 +1,5 @@
 "use client";
+import "./campus.css";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { usePlayer } from "@/components/auth/player-context";
@@ -12,9 +13,14 @@ import { locations, quests } from "@/game/data/campus";
 import { progression } from "@/game/progression/progression";
 import { isDebugMode, RELEASE_LABEL } from "@/lib/app-info";
 import { DebugPanel } from "./debug-panel";
+import { CampusNavigation } from "./campus-navigation";
+import { buildingName, connections } from "@/game/data/campus/index";
 import { FullscreenControl } from "./fullscreen-control";
 function CampusGame() {
-  const { save, session, activate } = usePlayer();
+  const { save, session, activate, error } = usePlayer();
+  const [connection, setConnection] = useState<string | null>(null);
+  const [transit, setTransit] = useState<string | null>(null);
+  const [mapOpen, setMapOpen] = useState(false);
   const [nearby, setNearby] = useState<string | null>(null);
   const [active, setActive] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -31,7 +37,12 @@ function CampusGame() {
   const quest = quests.find((q) => q.locationId === nearby);
   const selected = quests.find((q) => q.id === active);
   const interact = useCallback(async () => {
-    if (!quest || active || showCompletion) return;
+    if (active || showCompletion || transit || mapOpen) return;
+    if (!quest && connection) {
+      setTransit(connection);
+      return;
+    }
+    if (!quest) return;
     try {
       await activate(quest.id);
       setActive(quest.id);
@@ -39,8 +50,12 @@ function CampusGame() {
     } catch (e) {
       setMessage((e as Error).message);
     }
-  }, [quest, active, activate, showCompletion]);
+  }, [quest, active, activate, showCompletion, connection, transit, mapOpen]);
   useEffect(() => {
+    const off3 = session.bridge.on("CONNECTION_AVAILABLE", setConnection);
+    const off4 = session.bridge.on("MAP_TOGGLE", () =>
+      setMapOpen((open) => !open),
+    );
     const off1 = session.bridge.on("INTERACTION_AVAILABLE", (id) => {
       setNearby(id);
       setMessage("");
@@ -51,6 +66,8 @@ function CampusGame() {
     });
     return () => {
       off1();
+      off3();
+      off4();
       off2();
     };
   }, [session]);
@@ -62,11 +79,41 @@ function CampusGame() {
     [session, interact],
   );
   useEffect(() => {
-    session.bridge.emit("PAUSE_CHANGED", Boolean(active) || showCompletion);
+    session.bridge.emit(
+      "PAUSE_CHANGED",
+      Boolean(active) || showCompletion || Boolean(transit) || mapOpen,
+    );
     return () => session.bridge.emit("PAUSE_CHANGED", false);
-  }, [session, active, showCompletion]);
+  }, [session, active, showCompletion, transit, mapOpen]);
+  useEffect(() => {
+    const toggleMap = (event: KeyboardEvent) => {
+      if (
+        event.key.toLowerCase() !== "m" ||
+        event.repeat ||
+        active ||
+        transit ||
+        showCompletion
+      )
+        return;
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      )
+        return;
+      event.preventDefault();
+      setMapOpen((open) => !open);
+    };
+    window.addEventListener("keydown", toggleMap);
+    return () => window.removeEventListener("keydown", toggleMap);
+  }, [active, transit, showCompletion]);
   const xp = progression(save!.xp);
   const count = Object.keys(save!.collectibles).length;
+  const destination = locations.find(
+    (l) =>
+      l.id ===
+      quests.find((q) => save!.quests[q.id]?.status !== "COMPLETED")
+        ?.locationId,
+  );
   return (
     <main className="game-page">
       <header className="game-hud">
@@ -106,17 +153,25 @@ function CampusGame() {
       </header>
       <section className="world-frame">
         <GameCanvas />
+        <CampusNavigation
+          transit={transit}
+          onTransitClose={() => setTransit(null)}
+          mapOpen={mapOpen}
+          setMapOpen={setMapOpen}
+        />
         {debug && (
           <DebugPanel
             nearby={nearby}
-            paused={Boolean(active) || showCompletion}
+            paused={
+              Boolean(active) || showCompletion || Boolean(transit) || mapOpen
+            }
           />
         )}
         <div className="world-title">
           <span className="live-dot" />
           <div>
             <strong>EWU CAMPUS</strong>
-            <span>SIMULATED WORLD · V0</span>
+            <span>CAMPUS EXPLORATION · V0.2</span>
           </div>
         </div>
         <aside className="route-card">
@@ -130,9 +185,16 @@ function CampusGame() {
           </strong>
           <span>
             {count === 0
-              ? "Meet the Main Gate marker below."
+              ? "Start at the outer gate. Follow the entry path."
               : `${5 - count} more keys waiting to be discovered.`}
           </span>
+          {count > 0 && destination && (
+            <span>
+              {destination.name}
+              <br />
+              {buildingName(destination.buildingId)} · {destination.floor}
+            </span>
+          )}
           <div className="route-dots">
             {quests.map((q) => (
               <span
@@ -149,10 +211,10 @@ function CampusGame() {
           N<br />↑
         </div>
         <div className="world-caption">
-          FICTIONAL MAP · NOT REAL CAMPUS GEOGRAPHY
+          EWU-INSPIRED WORLD · INTERIOR GEOMETRY APPROXIMATE
         </div>
         <TouchControls />
-        {nearby && (
+        {(nearby || connection) && (
           <div className="interaction-card" aria-live="polite">
             <div>
               <span className="eyebrow">
@@ -160,19 +222,24 @@ function CampusGame() {
                   ? "LOCATION COMPLETE"
                   : "LOCATION DISCOVERED"}
               </span>
-              <strong>{locations.find((l) => l.id === nearby)?.name}</strong>
+              <strong>
+                {locations.find((l) => l.id === nearby)?.name ??
+                  connections.find((c) => c.id === connection)?.name}
+              </strong>
             </div>
             <button className="primary" onClick={() => void interact()}>
               <kbd>E</kbd>{" "}
               {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
                 ? "View key"
-                : "Investigate"}
+                : connection && !nearby
+                  ? "Choose floor"
+                  : "Investigate"}
             </button>
           </div>
         )}
-        {message && (
+        {(message || error) && (
           <p className="game-message" role="status">
-            {message}
+            {message || error}
           </p>
         )}
       </section>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePlayer } from "@/components/auth/player-context";
 import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
 import { KeyIcon } from "@/components/ui/key-icon";
+import { buildingName } from "@/game/data/campus/index";
 import { collectibles, locations } from "@/game/data/campus";
 function Collection() {
   const { save } = usePlayer();
@@ -46,6 +47,13 @@ function Collection() {
                 </div>
                 <p className="eyebrow">
                   {locations.find((l) => l.id === item.location)?.name}
+                </p>
+                <p className="muted">
+                  {buildingName(
+                    locations.find((l) => l.id === item.location)?.buildingId ??
+                      null,
+                  )}{" "}
+                  · {locations.find((l) => l.id === item.location)?.floor}
                 </p>
                 <h2>{item.name}</h2>
                 <p className="muted">

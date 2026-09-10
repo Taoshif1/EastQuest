@@ -1,0 +1,223 @@
+.floor-context {
+  position: absolute;
+  top: 78px;
+  left: 24px;
+  display: grid;
+  gap: 3px;
+  background: #243a35eb;
+  color: #f2efdd;
+  padding: 12px 16px;
+  border-radius: 8px;
+  max-width: 240px;
+  pointer-events: none;
+}
+.floor-context strong {
+  font-size: 18px;
+}
+.minimap-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: block;
+  width: 184px;
+  padding: 10px;
+  background: #233a34ed;
+  border: 1px solid #9eab9766;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px #19332725;
+}
+.minimap-button > span {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 8px;
+  gap: 5px;
+}
+.minimap-button small {
+  font-size: 8px;
+  color: #cfc8a8;
+}
+.floor-map {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.floor-map.large {
+  max-height: 45dvh;
+  background: #243a35;
+}
+.floor-options {
+  display: grid;
+  gap: 8px;
+  max-height: 50dvh;
+  overflow: auto;
+  padding: 3px;
+}
+.floor-options button {
+  display: grid;
+  grid-template-columns: 40px 1fr 18px;
+  text-align: left;
+  padding: 10px 14px;
+  min-height: 62px;
+}
+.floor-options button > span:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+.floor-options small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.floor-number {
+  font: 26px var(--display);
+  color: var(--gold);
+}
+.directory-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 20px 0 0;
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 11px;
+  margin: 16px 0;
+}
+.destination-note {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.destination-note strong {
+  display: block;
+  margin: 5px 0;
+}
+.destination-note p {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 5px;
+  color: var(--muted);
+}
+.atlas-directory {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.world-frame .route-card {
+  left: 24px;
+  right: auto;
+  top: 165px;
+  max-width: 220px;
+  background: #243a35e6;
+}
+.world-frame .north-indicator {
+  display: none;
+}
+.world-frame .world-title {
+  background: #243a35e6;
+}
+.world-caption {
+  background: #243a35bd;
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+.calibration-controls {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+}
+.calibration-controls label {
+  display: flex;
+  gap: 8px;
+}
+.game-page .debug-panel {
+  top: auto;
+  bottom: 175px;
+  max-height: 190px;
+  overflow: auto;
+}
+@media (max-width: 768px) {
+  .world-frame .route-card {
+    display: none;
+  }
+  .floor-context {
+    left: 12px;
+    top: 70px;
+    max-width: 190px;
+    padding: 8px 10px;
+  }
+  .floor-context .eyebrow {
+    font-size: 8px;
+  }
+  .floor-context strong {
+    font-size: 15px;
+  }
+  .minimap-button {
+    width: 126px;
+    right: 12px;
+    top: 12px;
+    padding: 8px;
+  }
+  .minimap-button > span {
+    font-size: 9px;
+  }
+  .minimap-button small {
+    font-size: 7px;
+  }
+  .world-frame .world-title {
+    max-width: 200px;
+  }
+  .game-page .dpad {
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(2, 46px);
+    display: grid;
+  }
+  .game-page .interaction-card {
+    max-width: calc(100% - 170px);
+    bottom: 36px;
+  }
+  .game-page .interaction-card strong {
+    font-size: 18px;
+  }
+}
+@media (max-width: 430px) {
+  .world-title {
+    max-width: 210px;
+  }
+  .floor-context {
+    max-width: 210px;
+  }
+  .map-legend {
+    gap: 10px;
+    font-size: 10px;
+  }
+}
+
+/* Diagnostics occupy their own column; they must not cover route guidance. */
+.world-frame:has(.debug-panel) .route-card {
+  display: none;
+}
+.game-page .debug-panel {
+  top: 155px;
+  bottom: auto;
+  max-height: calc(100% - 330px);
+  width: 265px;
+}
+@media (max-width: 768px) {
+  .game-page .debug-panel {
+    top: 150px;
+    max-height: 140px;
+    width: 220px;
+  }
+}
+
+.calibration-controls input[type="number"] {
+  width: 78px;
+  min-height: 24px;
+  padding: 2px 5px;
+  margin-left: auto;
+}

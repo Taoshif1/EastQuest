@@ -1,3 +1,9 @@
+import type { Evidence } from "@/game/data/campus/evidence";
+import type {
+  BuildingId,
+  FloorId,
+  PlayerWorldLocation,
+} from "@/game/data/campus/types";
 export type WorldPosition = { x: number; y: number };
 export type GeoPosition = {
   latitude: number;
@@ -7,6 +13,10 @@ export type GeoPosition = {
 export type VerificationMode = "proximity" | "gps" | "qr" | "vision";
 export interface CampusLocation {
   id: string;
+  buildingId: BuildingId | null;
+  floorId: FloorId;
+  evidence: Evidence;
+  geometryEvidence?: Evidence;
   slug: string;
   name: string;
   description: string;
@@ -62,6 +72,9 @@ export interface Profile {
 }
 export interface GameSave {
   version: 1;
+  worldRevision?: 2;
+  worldLocation?: PlayerWorldLocation;
+  discoveredPois?: string[];
   profile: Profile;
   xp: number;
   level: number;

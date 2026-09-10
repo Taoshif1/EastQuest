@@ -1,5 +1,17 @@
 import * as Phaser from "phaser";
-import { buildings, locations, quests, WORLD } from "@/game/data/campus";
+import {
+  blueprintBounds,
+  defaultCalibration,
+} from "@/game/data/campus/calibration";
+import { locations, quests, WORLD } from "@/game/data/campus";
+import {
+  collisionRects,
+  connections,
+  connectionsOn,
+  destinations,
+  zoneAt,
+} from "@/game/data/campus/index";
+import { drawFloor } from "@/game/rendering/campus-renderer";
 import type { GameSession } from "@/game/core/session";
 import { normalizedDirection } from "@/game/movement/position-provider";
 import type { WorldPosition } from "@/types/game";
@@ -11,12 +23,18 @@ export class CampusScene extends Phaser.Scene {
   private touch: WorldPosition = { x: 0, y: 0 };
   private paused = false;
   private nearby: string | null = null;
+  private nearestConnection: string | null = null;
+  private travelling = false;
   private disposers: (() => void)[] = [];
   private markerLabels = new Map<string, Phaser.GameObjects.Text>();
   constructor(private session: GameSession) {
     super("campus");
   }
   create() {
+    this.nearby = null;
+    this.nearestConnection = null;
+    this.travelling = false;
+    const floorId = this.session.position.getWorldLocation().floorId;
     this.physics.world.setBounds(30, 30, WORLD.width - 60, WORLD.height - 60);
     this.drawCampus();
     this.createAvatar();
@@ -24,9 +42,9 @@ export class CampusScene extends Phaser.Scene {
     this.player = this.physics.add
       .sprite(start.x, start.y, "explorer")
       .setDepth(20);
-    this.player.setCollideWorldBounds(true).setSize(20, 18).setOffset(10, 27);
+    this.player.setCollideWorldBounds(true).setSize(18, 18).setOffset(11, 16);
     const walls = this.physics.add.staticGroup();
-    buildings.forEach((b) => {
+    collisionRects(floorId).forEach((b) => {
       const wall = this.add.rectangle(
         b.x + b.width / 2,
         b.y + b.height / 2,
@@ -37,18 +55,18 @@ export class CampusScene extends Phaser.Scene {
       );
       walls.add(wall);
     });
-    // Gate pillars block movement, while the central arch remains walkable.
-    [535, 745].forEach((x) =>
-      walls.add(this.add.rectangle(x, 905, 32, 60, 0x000000, 0)),
-    );
+
     this.physics.add.collider(this.player, walls);
     this.keys = this.input.keyboard!.addKeys(
-      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E",
+      "W,A,S,D,UP,DOWN,LEFT,RIGHT,E,M",
     ) as Record<string, Phaser.Input.Keyboard.Key>;
     this.cameras.main
       .setBounds(0, 0, WORLD.width, WORLD.height)
       .startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setBackgroundColor("#152c29");
+    this.cameras.main.setBackgroundColor("#9baa9f");
+    this.cameras.main.setZoom(this.scale.width < 600 ? 0.85 : 1);
+    this.cameras.main.fadeIn(180, 35, 50, 45);
+    this.session.bridge.emit("FLOOR_CHANGED", floorId);
     const resetInput = () => {
       this.touch = { x: 0, y: 0 };
       this.input.keyboard?.resetKeys();
@@ -79,11 +97,106 @@ export class CampusScene extends Phaser.Scene {
         });
       }),
     );
+    this.disposers.push(
+      this.session.bridge.on("TRAVEL_REQUESTED", (request) => {
+        const c = connections.find((c) => c.id === request.connectionId);
+        if (
+          !c ||
+          this.travelling ||
+          !destinations(c, floorId).includes(request.floorId as never)
+        )
+          return;
+        if (
+          Math.hypot(
+            this.player.x - c.position.x,
+            this.player.y - c.position.y,
+          ) > 55
+        )
+          return;
+        this.travelling = true;
+        resetInput();
+        this.cameras.main.fadeOut(180, 35, 50, 45);
+        this.time.delayedCall(180, () => {
+          this.session.position.updateWorldLocation({
+            buildingId: c.buildingId,
+            floorId: request.floorId as typeof floorId,
+            position: c.position,
+          });
+          this.scene.restart();
+        });
+      }),
+    );
+    const overlay = this.add.graphics().setDepth(30).setVisible(false);
+    collisionRects(floorId).forEach((r) =>
+      overlay
+        .lineStyle(1, 0xd7544a, 0.8)
+        .strokeRect(r.x, r.y, r.width, r.height),
+    );
+    let calibration = defaultCalibration;
+    const blueprints = new Map<string, Phaser.GameObjects.Image>();
+    const loading = new Set<string>();
+    const applyBlueprint = () => {
+      for (const image of blueprints.values()) image.setVisible(false);
+      if (!calibration.blueprint) return;
+      const variant =
+        calibration.color && floorId !== "roof-deck" ? "color" : "mono";
+      const key = "blueprint-" + floorId + "-" + variant;
+      const existing = blueprints.get(key);
+      if (existing) {
+        const bounds = blueprintBounds(floorId, variant === "color");
+        existing
+          .setPosition(
+            bounds.x + calibration.offsetX,
+            bounds.y + calibration.offsetY,
+          )
+          .setDisplaySize(
+            bounds.width * calibration.scale,
+            bounds.height * calibration.scale,
+          )
+          .setAlpha(calibration.opacity)
+          .setVisible(true);
+      } else if (!loading.has(key)) {
+        loading.add(key);
+        const show = () => {
+          loading.delete(key);
+          if (!this.scene.isActive() || !this.textures.exists(key)) return;
+          blueprints.set(
+            key,
+            this.add.image(0, 0, key).setOrigin(0).setDepth(29),
+          );
+          applyBlueprint();
+        };
+        if (this.textures.exists(key)) show();
+        else {
+          this.load.image(
+            key,
+            "/api/campus-reference/" + floorId + "?variant=" + variant,
+          );
+          this.load.once("complete", show);
+          this.load.start();
+        }
+      }
+    };
+    this.disposers.push(
+      this.session.bridge.on("CALIBRATION_CHANGED", (options) => {
+        if (new URLSearchParams(window.location.search).get("debug") !== "1")
+          return;
+        overlay.setVisible(options.collisions);
+        if (process.env.NODE_ENV !== "development") return;
+        calibration = options;
+        applyBlueprint();
+      }),
+    );
     // A Scene can be recreated by routing or development Strict Mode. Clean everything.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.disposers.forEach((fn) => fn());
       this.disposers = [];
       this.session.bridge.emit("INTERACTION_CLEARED", undefined);
+      this.session.bridge.emit("CONNECTION_AVAILABLE", null);
+      for (const variant of ["mono", "color"]) {
+        const key = "blueprint-" + floorId + "-" + variant;
+        if (this.textures.exists(key)) this.textures.remove(key);
+      }
     });
   }
   private label(
@@ -105,137 +218,10 @@ export class CampusScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
   private drawCampus() {
-    const g = this.add.graphics();
-    g.fillStyle(0x244335).fillRoundedRect(28, 28, 1224, 1004, 22);
-    g.lineStyle(5, 0x718274).strokeRoundedRect(28, 28, 1224, 1004, 22);
-    // Deterministic decorative tufts keep the map lightweight and reproducible.
-    for (let i = 0; i < 650; i++) {
-      const x = 45 + ((i * 179) % 1190);
-      const y = 45 + ((i * 137) % 965);
-      g.fillStyle(i % 2 ? 0x365241 : 0x2c4b39).fillRect(x, y, 3, 4);
-    }
-    g.fillStyle(0x829183)
-      .fillRect(592, 100, 96, 870)
-      .fillRect(150, 290, 980, 80)
-      .fillRect(150, 615, 980, 80);
-    g.fillStyle(0xa3aa92)
-      .fillRect(608, 105, 64, 865)
-      .fillRect(155, 306, 970, 48)
-      .fillRect(155, 631, 970, 48);
-    g.lineStyle(1, 0x788b7c, 0.6);
-    for (let y = 110; y < 975; y += 24) g.lineBetween(610, y, 670, y);
-    for (let x = 160; x < 1130; x += 24) {
-      g.lineBetween(x, 308, x, 352);
-      g.lineBetween(x, 633, x, 677);
-    }
-    // Courtyard islands leave a clear north/south walking route through the center.
-    [470, 810].forEach((x) => {
-      g.fillStyle(0x162f2b).fillEllipse(x, 435, 125, 100);
-      g.lineStyle(3, 0x82988b).strokeEllipse(x, 429, 120, 94);
-      g.fillStyle(0x427574).fillEllipse(x, 427, 104, 78);
-      g.lineStyle(2, 0x76a6a0).strokeEllipse(x, 427, 70, 45);
-      g.fillStyle(0xacc4ae).fillCircle(x, 425, 8);
-    });
-    buildings.forEach((b) => {
-      g.fillStyle(0x122b26, 0.65).fillRoundedRect(
-        b.x + 12,
-        b.y + 14,
-        b.width,
-        b.height,
-        4,
-      );
-      g.fillStyle(b.color).fillRect(b.x, b.y, b.width, b.height);
-      g.fillStyle(0x364e46).fillRect(
-        b.x + 8,
-        b.y + 8,
-        b.width - 16,
-        b.height - 32,
-      );
-      g.fillStyle(0x435e53).fillRect(b.x + 16, b.y + 16, b.width - 32, 42);
-      for (let i = 0; i < 6; i++) {
-        g.fillStyle(0xa4c3b1).fillRect(b.x + 20 + i * 35, b.y + 67, 23, 24);
-        g.fillStyle(0x72998b).fillRect(b.x + 22 + i * 35, b.y + 69, 8, 20);
-      }
-      g.fillStyle(0x152e2b).fillRect(
-        b.x + b.width / 2 - 18,
-        b.y + b.height - 26,
-        36,
-        26,
-      );
-      g.fillStyle(0xc9c4a6).fillRect(
-        b.x + b.width / 2 - 28,
-        b.y + b.height,
-        56,
-        8,
-      );
-      this.label(b.x + b.width / 2, b.y + 37, b.label, 12);
-      g.fillStyle(0xa5ada0).fillRect(b.x + 24, b.y + 18, 22, 9);
-    });
-    const tree = (x: number, y: number) => {
-      g.fillStyle(0x102e26, 0.6).fillEllipse(x + 8, y + 12, 44, 27);
-      g.fillStyle(0x8b7351).fillRect(x - 4, y, 8, 21);
-      g.fillStyle(0x315b40).fillCircle(x, y - 5, 24);
-      g.fillStyle(0x477956).fillCircle(x - 7, y - 12, 18);
-      g.fillStyle(0x5c8a60).fillCircle(x - 10, y - 18, 10);
-    };
-    for (let x = 90; x < 1200; x += 85) {
-      tree(x, 82);
-      if (x < 500 || x > 780) tree(x, 958);
-    }
-    for (let y = 175; y < 900; y += 105) {
-      tree(93, y);
-      tree(1187, y);
-    }
-    [
-      [230, 775],
-      [340, 820],
-      [440, 755],
-      [850, 775],
-      [1030, 820],
-      [750, 160],
-      [535, 160],
-      [160, 440],
-      [1110, 445],
-    ].forEach(([x, y]) => tree(x, y));
-    [390, 730].forEach((y) =>
-      [570, 710].forEach((x) => {
-        g.fillStyle(0x172d29).fillRect(x - 2, y, 4, 30);
-        g.fillStyle(0xebcc88).fillCircle(x, y - 2, 5);
-        g.fillStyle(0xeccc88, 0.06).fillCircle(x, y - 2, 20);
-      }),
+    this.markerLabels = drawFloor(
+      this,
+      this.session.position.getWorldLocation().floorId,
     );
-    [
-      [470, 725],
-      [775, 725],
-      [470, 365],
-      [775, 365],
-    ].forEach(([x, y]) => {
-      g.fillStyle(0x172c25).fillRect(x, y + 8, 44, 10);
-      g.fillStyle(0x9f8d66)
-        .fillRect(x, y, 44, 6)
-        .fillRect(x, y + 8, 44, 6);
-    });
-    g.fillStyle(0x233f37).fillRoundedRect(520, 760, 240, 44, 5);
-    this.label(640, 782, "E W U  /  EASTQUEST", 15, "#d5c69c");
-    [519, 729].forEach((x) => {
-      g.fillStyle(0xa7aa91).fillRect(x, 875, 32, 60);
-      g.fillStyle(0xd9bd80).fillRect(x - 4, 870, 40, 10);
-    });
-    g.fillStyle(0x334b40).fillRect(515, 855, 254, 24);
-    this.label(640, 867, "EAST WEST UNIVERSITY", 13, "#f2d294");
-    this.label(640, 993, "MAIN GATE  /  YOUR FIRST CHAPTER", 13, "#d1caa9");
-    locations.forEach((l, index) => {
-      const { x, y } = l.worldPosition;
-      this.add
-        .circle(x, y, 29, 0xf1bc61, 0.08)
-        .setStrokeStyle(1, 0xe9bd70, 0.35);
-      this.add.circle(x, y, 17, 0x182f2c).setStrokeStyle(2, 0xf1bd67);
-      this.markerLabels.set(
-        l.id,
-        this.label(x, y, index === 0 ? "!" : String(index + 1), 17, "#f8d08b"),
-      );
-      if (index > 0) this.label(x, y + 42, l.name.toUpperCase(), 11, "#e3dfc1");
-    });
   }
   private createAvatar() {
     if (this.textures.exists("explorer")) return;
@@ -257,26 +243,35 @@ export class CampusScene extends Phaser.Scene {
   update() {
     if (!this.player || !this.keys) return;
     const down = (key: string) => this.keys[key].isDown;
-    const direction = this.paused
-      ? { x: 0, y: 0 }
-      : normalizedDirection(
-          Number(down("D") || down("RIGHT")) -
-            Number(down("A") || down("LEFT")) +
-            this.touch.x,
-          Number(down("S") || down("DOWN")) -
-            Number(down("W") || down("UP")) +
-            this.touch.y,
-        );
+    const direction =
+      this.paused || this.travelling
+        ? { x: 0, y: 0 }
+        : normalizedDirection(
+            Number(down("D") || down("RIGHT")) -
+              Number(down("A") || down("LEFT")) +
+              this.touch.x,
+            Number(down("S") || down("DOWN")) -
+              Number(down("W") || down("UP")) +
+              this.touch.y,
+          );
     this.player.setVelocity(
       direction.x * WORLD.speed,
       direction.y * WORLD.speed,
     );
+    // A retiring scene must not overwrite the destination landing during restart.
+    if (this.travelling) return;
     if (direction.x) this.player.setFlipX(direction.x < 0);
     const position = { x: this.player.x, y: this.player.y };
-    this.session.position.update(position);
+    const floorId = this.session.position.getWorldLocation().floorId;
+    this.session.position.updateWorldLocation({
+      floorId,
+      buildingId: zoneAt(floorId, position)?.buildingId ?? null,
+      position,
+    });
     this.session.bridge.emit("PLAYER_POSITION_CHANGED", position);
     const location = locations.find(
       (l) =>
+        l.floorId === floorId &&
         Math.hypot(
           position.x - l.worldPosition.x,
           position.y - l.worldPosition.y,
@@ -284,11 +279,28 @@ export class CampusScene extends Phaser.Scene {
     );
     if ((location?.id ?? null) !== this.nearby) {
       this.nearby = location?.id ?? null;
-      if (location)
+      if (location) {
         this.session.bridge.emit("INTERACTION_AVAILABLE", location.id);
-      else this.session.bridge.emit("INTERACTION_CLEARED", undefined);
+        this.session.bridge.emit("POI_DISCOVERED", location.id);
+      } else this.session.bridge.emit("INTERACTION_CLEARED", undefined);
     }
-    if (!this.paused && Phaser.Input.Keyboard.JustDown(this.keys.E))
+    const core = connectionsOn(floorId)
+      .map((c) => ({
+        c,
+        d: Math.hypot(position.x - c.position.x, position.y - c.position.y),
+      }))
+      .sort((a, b) => a.d - b.d)[0];
+    const coreId = core && core.d <= 50 ? core.c.id : null;
+    if (coreId !== this.nearestConnection) {
+      this.nearestConnection = coreId;
+      this.session.bridge.emit("CONNECTION_AVAILABLE", coreId);
+    }
+
+    if (
+      !this.paused &&
+      !this.travelling &&
+      Phaser.Input.Keyboard.JustDown(this.keys.E)
+    )
       this.session.bridge.emit("INTERACT", undefined);
   }
 }

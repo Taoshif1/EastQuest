@@ -5,3 +5,8 @@ node_modules/
 .artifacts/
 supabase/.temp/
 .vercel/
+
+# Architectural originals are local calibration references, not distributable assets.
+/references/ewu-floorplans/*.png
+/references/ewu-public-map.png
+/.artifacts-*.html

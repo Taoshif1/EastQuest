@@ -1,7 +1,9 @@
+﻿references/
 .artifacts/
+.artifacts-*
+.v02-*
+.inspect-plan.ps1
 .env*
-.git/
-.next/
 node_modules/
-.vercel/
-supabase/.temp/
+.next/
+.git/
