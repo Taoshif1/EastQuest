@@ -1493,6 +1493,32 @@ kbd {
   color: var(--muted);
   font-size: 25px;
 }
+.round-feedback {
+  margin: 18px 0 0;
+  text-align: center;
+  font: 24px var(--display);
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+.dialogue-panel {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #162a2b;
+}
+.dialogue-speaker {
+  margin: 0;
+  color: var(--gold);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.dialogue-panel h1 {
+  margin: 0;
+}
 .activity-result p {
   color: var(--muted);
 }

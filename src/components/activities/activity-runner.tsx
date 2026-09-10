@@ -18,6 +18,7 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
   const [meterRunning, setMeterRunning] = useState(false);
   const [corner, setCorner] = useState<string | null>(null);
   const [keeper, setKeeper] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [reaction, setReaction] = useState<"ready" | "waiting" | "go" | "done">("ready");
   const startedAt = useRef(0);
   const goTimer = useRef<number | null>(null);
@@ -49,7 +50,10 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
   }
   function submitRound(value: number) {
     const nextTotal = totalScore + Math.round(value);
+    setFeedback(value >= 90 ? "PERFECT" : value >= 60 ? "GOOD" : value > 0 ? "EDGE" : "MISS");
     if (round + 1 < activity.rounds.length) {
+      setBusy(true);
+      window.setTimeout(() => {
       setTotalScore(nextTotal);
       setRound((currentRound) => currentRound + 1);
       setMeter(0);
@@ -57,6 +61,9 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
       setCorner(null);
       setKeeper(null);
       setReaction("ready");
+      setFeedback(null);
+      setBusy(false);
+      }, 450);
       return;
     }
     void finish(nextTotal / activity.rounds.length);
@@ -138,11 +145,12 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
             const choices = ["Top left", "Top right", "Bottom left", "Bottom right"];
             const picked = choices[round % choices.length];
             setKeeper(picked);
-            submitRound(picked === corner ? 20 : 100);
+            submitRound(picked === corner ? 0 : 100);
           }}>Take penalty</button>
           {keeper && <p className="game-message">The keeper dived {keeper}.</p>}
         </div>
       )}
+      {feedback && score === null && <p className="round-feedback" role="status">{feedback}</p>}
       {score === null && activity.gameType === "reaction" && (
         <div className="arcade-panel reaction-panel">
           <p className="activity-prompt">{current.prompt}</p>

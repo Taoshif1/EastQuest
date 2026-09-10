@@ -40,6 +40,29 @@ Device emulation helps find layout issues but does not replace actual iOS/Androi
 Installation depends on browser support. The manifest supplies standalone metadata
 and original icons; no service worker or offline guarantee is provided.
 
+## V0.3C campus adventure pass
+
+Use this shorter route to exercise the connected exploration loop:
+
+1. Log in with the sample ID and walk until an NPC or unusual-detail cue appears.
+2. Open the interaction prompt and confirm that NPCs say **Talk**, activities say
+   **Play**, discoveries say **Investigate**, and ordinary objects use **Read** or
+   **Inspect**. When several targets overlap, use the arrows or Tab/Q to cycle.
+3. Talk to an NPC, choose **Listen**, then ask about a rumor. Close the conversation
+   and continue exploring; the contact and rumor should remain in the Explorer Log.
+4. Visit the Sports Arcade. Play one cricket timing, penalty, and reaction run.
+   Confirm each run gives immediate round feedback, supports replay, and preserves
+   the best score after reload.
+5. Inspect a Three Marks discovery and at least one other hidden discovery. Confirm
+   the subtle world cue becomes a saved collection entry without duplicate XP.
+6. Reload after the route and verify position, discoveries, rumors, activity scores,
+   notifications, and quest progress remain available.
+
+For touch testing, use the on-screen movement controls and tap every action button
+at 390x844 and 430x900. For desktop testing, verify the same route at 1440x900
+without HUD overlap. Reduced-motion users should still receive text feedback and
+must not depend on animation alone.
+
 ## One record per tester
 
 Do not collect names, passwords, real student IDs, location history or faces.
