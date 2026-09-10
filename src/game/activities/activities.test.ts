@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { activities } from "./data";
-import { discoverRumor, recordActivityResult } from "./engine";
+import { discoverRumor, penaltyScore, recordActivityResult, sportMedalForScore } from "./engine";
 import { newGame } from "@/game/quests/quest-engine";
 import { LocalGameRepository, type StoragePort } from "@/game/persistence/game-repository";
 
@@ -82,5 +82,24 @@ describe("campus activity progression", () => {
     const found = discoverRumor(save, "rooftop-garden");
     expect(found.isNew).toBe(true);
     expect(discoverRumor(found.save, "rooftop-garden").isNew).toBe(false);
+  });
+
+  it("uses centralized sports medal thresholds and only upgrades medals", () => {
+    expect(sportMedalForScore(60)).toBe("BRONZE");
+    expect(sportMedalForScore(75)).toBe("SILVER");
+    expect(sportMedalForScore(90)).toBe("GOLD");
+    const activity = activities.find((item) => item.id === "cricket-boundary-timing")!;
+    const bronze = recordActivityResult(newGame(profile), activity, 60, true);
+    const silver = recordActivityResult(bronze.save, activity, 80, true);
+    const replay = recordActivityResult(silver.save, activity, 70, true);
+    expect(bronze.save.sportsMedals?.[activity.id]).toBe("BRONZE");
+    expect(silver.save.sportsMedals?.[activity.id]).toBe("SILVER");
+    expect(replay.save.sportsMedals?.[activity.id]).toBe("SILVER");
+    expect(replay.newMedal).toBeUndefined();
+  });
+
+  it("keeps penalty saves at zero and open corners as goals", () => {
+    expect(penaltyScore("left", "left")).toBe(0);
+    expect(penaltyScore("left", "right")).toBe(100);
   });
 });

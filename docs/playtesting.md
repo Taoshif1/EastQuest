@@ -63,6 +63,20 @@ at 390x844 and 430x900. For desktop testing, verify the same route at 1440x900
 without HUD overlap. Reduced-motion users should still receive text feedback and
 must not depend on animation alone.
 
+## V0.3C2 progression pass
+
+1. Start a side quest, enter the Lost Campus File, and confirm the compact
+   **TRACKING** controls can switch between the Campus Quest, case, and side-quest
+   lead without resetting any progress.
+2. Open the Case Board and confirm the current lead, stage trail, evidence count,
+   discovered clue details, and `???` placeholders for undiscovered clues are
+   readable on a narrow screen.
+3. Play Cricket Boundary Timing, Futsal Penalty, and Table Tennis Reaction.
+   Confirm best scores persist, a first medal is shown, and replaying with a lower
+   score does not remove an existing medal.
+4. Open Collection and Profile after the sports runs. Confirm the three sports
+   medal slots, activity counts, and objective selection survive reload.
+
 ## One record per tester
 
 Do not collect names, passwords, real student IDs, location history or faces.
