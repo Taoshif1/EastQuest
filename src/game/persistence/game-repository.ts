@@ -1,6 +1,7 @@
 import { restoreLocation } from "@/game/data/campus/index";
 import type { GameSave } from "@/types/game";
 import { initialCases } from "@/game/cases/engine";
+import { initialActivities } from "@/game/activities/engine";
 /** All storage is behind this contract; a production adapter can use authenticated APIs. */
 export interface GameRepository {
   load(studentId: string): Promise<GameSave | null>;
@@ -45,6 +46,40 @@ export class LocalGameRepository implements GameRepository {
           throw new Error();
       for (const c of Object.values(data.collectibles))
         if (!c || !Number.isFinite(Date.parse(c.obtainedAt))) throw new Error();
+      const migratedActivities = { ...initialActivities() };
+      if (data.activities && typeof data.activities === "object") {
+        for (const [id, value] of Object.entries(data.activities)) {
+          if (
+            value &&
+            typeof value === "object" &&
+            Number.isFinite(value.plays) &&
+            Number.isFinite(value.bestScore) &&
+            typeof value.completed === "boolean"
+          ) {
+            migratedActivities[id] = {
+              plays: Math.max(0, Math.floor(value.plays)),
+              bestScore: Math.max(0, Math.min(100, value.bestScore)),
+              completed: value.completed,
+              ...(typeof value.lastPlayedAt === "string"
+                ? { lastPlayedAt: value.lastPlayedAt }
+                : {}),
+            };
+          }
+        }
+      }
+      const migratedStamps: NonNullable<GameSave["stamps"]> = {};
+      if (data.stamps && typeof data.stamps === "object") {
+        for (const [id, value] of Object.entries(data.stamps)) {
+          if (
+            value &&
+            typeof value === "object" &&
+            typeof value.obtainedAt === "string" &&
+            Number.isFinite(Date.parse(value.obtainedAt))
+          ) {
+            migratedStamps[id] = { obtainedAt: value.obtainedAt };
+          }
+        }
+      }
       return {
         ...data,
         worldRevision: 2,
@@ -56,6 +91,26 @@ export class LocalGameRepository implements GameRepository {
           : [],
         cases: data.cases && typeof data.cases === "object" ? { ...initialCases(), ...data.cases } : initialCases(),
         badges: data.badges && typeof data.badges === "object" ? data.badges : {},
+        activities: migratedActivities,
+        achievements:
+          data.achievements && typeof data.achievements === "object"
+            ? data.achievements
+            : {},
+        stamps: migratedStamps,
+        discoveredRumors: Array.isArray(data.discoveredRumors)
+          ? data.discoveredRumors.filter((id) => typeof id === "string")
+          : [],
+        discoveredInteractions:
+          data.discoveredInteractions && typeof data.discoveredInteractions === "object"
+            ? data.discoveredInteractions
+            : {},
+        hiddenDiscoveries:
+          data.hiddenDiscoveries && typeof data.hiddenDiscoveries === "object"
+            ? data.hiddenDiscoveries
+            : {},
+        npcsMet: data.npcsMet && typeof data.npcsMet === "object" ? data.npcsMet : {},
+        sideQuests: data.sideQuests && typeof data.sideQuests === "object" ? data.sideQuests : {},
+        notifications: Array.isArray(data.notifications) ? data.notifications.slice(-20) : [],
       };
     } catch {
       throw new Error(

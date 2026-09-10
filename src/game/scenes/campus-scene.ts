@@ -15,6 +15,7 @@ import { drawFloor } from "@/game/rendering/campus-renderer";
 import type { GameSession } from "@/game/core/session";
 import { facingDirection, normalizedDirection } from "@/game/movement/position-provider";
 import type { WorldPosition } from "@/types/game";
+import { npcs, worldInteractions } from "@/game/campus-life";
 
 /** Scene owns drawing, Arcade physics and proximity prompts, never quest rewards. */
 export class CampusScene extends Phaser.Scene {
@@ -38,6 +39,7 @@ export class CampusScene extends Phaser.Scene {
     const floorId = this.session.position.getWorldLocation().floorId;
     this.physics.world.setBounds(30, 30, WORLD.width - 60, WORLD.height - 60);
     this.drawCampus();
+    this.drawCampusLife(floorId);
     this.createAvatar();
     const start = this.session.position.getPosition();
     this.player = this.physics.add
@@ -224,6 +226,25 @@ export class CampusScene extends Phaser.Scene {
       this.session.position.getWorldLocation().floorId,
     );
   }
+  private drawCampusLife(floorId: string) {
+    worldInteractions
+      .filter((item) => item.floorId === floorId)
+      .forEach((item) => {
+        const color = item.kind === "discovery" ? 0xf1bd6c : 0x86c5ca;
+        this.add
+          .circle(item.position.x, item.position.y, 12, color, 0.75)
+          .setStrokeStyle(2, 0xf6f4e7, 0.85)
+          .setDepth(8);
+        this.label(item.position.x, item.position.y - 24, item.kind === "discovery" ? "✦" : "•", 14, "#fff0c4").setDepth(8);
+      });
+    npcs
+      .filter((npc) => npc.floorId === floorId)
+      .forEach((npc) => {
+        const avatar = this.add.circle(npc.position.x, npc.position.y, 14, Phaser.Display.Color.HexStringToColor(npc.accent).color, 1).setDepth(9);
+        avatar.setStrokeStyle(2, 0x182631, 1);
+        this.label(npc.position.x, npc.position.y - 27, npc.name, 11, npc.accent).setDepth(9);
+      });
+  }
   private createAvatar() {
     if (this.textures.exists("explorer")) return;
     const g = this.make.graphics({ x: 0, y: 0 });
@@ -284,19 +305,38 @@ export class CampusScene extends Phaser.Scene {
       position,
     });
     this.session.bridge.emit("PLAYER_POSITION_CHANGED", position);
-    const location = locations.find(
-      (l) =>
-        l.floorId === floorId &&
-        Math.hypot(
-          position.x - l.worldPosition.x,
-          position.y - l.worldPosition.y,
-        ) <= l.interactionRadius,
-    );
-    if ((location?.id ?? null) !== this.nearby) {
-      this.nearby = location?.id ?? null;
-      if (location) {
-        this.session.bridge.emit("INTERACTION_AVAILABLE", location.id);
-        this.session.bridge.emit("POI_DISCOVERED", location.id);
+    const candidates = [
+      ...locations
+        .filter((l) => l.floorId === floorId)
+        .map((l) => ({
+          id: l.id,
+          distance: Math.hypot(position.x - l.worldPosition.x, position.y - l.worldPosition.y),
+          radius: l.interactionRadius,
+          poi: true,
+        })),
+      ...worldInteractions
+        .filter((item) => item.floorId === floorId)
+        .map((item) => ({
+          id: item.id,
+          distance: Math.hypot(position.x - item.position.x, position.y - item.position.y),
+          radius: item.radius ?? 58,
+          poi: false,
+        })),
+      ...npcs
+        .filter((npc) => npc.floorId === floorId)
+        .map((npc) => ({
+          id: `npc:${npc.id}`,
+          distance: Math.hypot(position.x - npc.position.x, position.y - npc.position.y),
+          radius: 58,
+          poi: false,
+        })),
+    ].sort((a, b) => a.distance - b.distance)[0];
+    const interactionId = candidates && candidates.distance <= candidates.radius ? candidates.id : null;
+    if (interactionId !== this.nearby) {
+      this.nearby = interactionId;
+      if (candidates && interactionId) {
+        this.session.bridge.emit("INTERACTION_AVAILABLE", interactionId);
+        if (candidates.poi) this.session.bridge.emit("POI_DISCOVERED", interactionId);
       } else this.session.bridge.emit("INTERACTION_CLEARED", undefined);
     }
     const core = connectionsOn(floorId)

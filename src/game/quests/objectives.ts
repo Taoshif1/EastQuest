@@ -29,7 +29,7 @@ export function currentObjective(save: GameSave): CurrentObjective | null {
   const guidance =
     location.floorId === "ground"
       ? "Follow the entry path to the marked location."
-      : `${building} · ${location.floor}. Use ${connection ? "the lift or stairs" : "campus circulation"} to reach it.`;
+      : `Use ${connection ? "the lift or stairs" : "campus circulation"} to reach it.`;
   return {
     questId: quest.id,
     title: quest.title,

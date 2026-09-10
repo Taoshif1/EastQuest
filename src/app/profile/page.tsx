@@ -7,12 +7,32 @@ import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
 import { progression } from "@/game/progression/progression";
 import { FeedbackDialog } from "@/components/ui/feedback-dialog";
 import { APP_VERSION, RELEASE_LABEL } from "@/lib/app-info";
+import { achievements } from "@/game/activities";
+import type { KnowledgeDomain } from "@/types/game";
+import { activities } from "@/game/activities";
+const specialties: Array<KnowledgeDomain | undefined> = [
+  undefined,
+  "COMPUTING",
+  "ENGINEERING",
+  "BUSINESS_FINANCE",
+  "LIFE_SCIENCE",
+  "LAW_SOCIETY",
+  "LANGUAGE_HUMANITIES",
+  "GENERAL",
+  "SPORTS",
+];
 function Profile() {
-  const { save, logout, reset } = usePlayer();
+  const { save, logout, reset, setSpecialty } = usePlayer();
   const router = useRouter();
   const [error, setError] = useState("");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const xp = progression(save!.xp);
+  const rank = xp.level >= 10 ? "Campus Cartographer" : xp.level >= 5 ? "Route Keeper" : "New Explorer";
+  const domainProgress = Array.from(new Set(activities.map((item) => item.domain))).map((domain) => ({
+    domain,
+    done: activities.filter((item) => item.domain === domain && save!.activities?.[item.id]?.completed).length,
+    total: activities.filter((item) => item.domain === domain).length,
+  }));
   return (
     <>
       <PageHeader />
@@ -53,6 +73,24 @@ function Profile() {
             <h2>{save!.profile.displayName}</h2>
             <p>{save!.profile.studentId}</p>
             <p className="muted profile-email">{save!.profile.email}</p>
+            <p className="profile-specialty">Focus: {save!.profile.specialty?.replace("_", " ") ?? "GENERAL EXPLORER"}</p>
+            <label className="profile-specialty-select">
+              Optional knowledge focus
+              <select
+                value={save!.profile.specialty ?? ""}
+                onChange={(event) =>
+                  void setSpecialty(
+                    (event.target.value || undefined) as KnowledgeDomain | undefined,
+                  )
+                }
+              >
+                {specialties.map((specialty, index) => (
+                  <option key={specialty ?? `GENERAL-${index}`} value={specialty ?? ""}>
+                    {specialty?.replace("_", " ") ?? "General explorer"}
+                  </option>
+                ))}
+              </select>
+            </label>
             <span className="prototype-badge">
               LOCAL PROFILE · NOT EWU VERIFIED
             </span>
@@ -81,17 +119,35 @@ function Profile() {
             </strong>
             <span>QUESTS COMPLETE</span>
           </div>
+          <div>
+            <strong>{Object.values(save!.activities ?? {}).filter((activity) => activity.completed).length}</strong>
+            <span>ACTIVITIES COMPLETE</span>
+          </div>
         </div>
+        <section className="profile-achievements">
+          <span className="eyebrow">ACTIVITY ACHIEVEMENTS</span>
+          <div className="achievement-strip">
+            {achievements.map((achievement) => <span className={save!.achievements?.[achievement.id] ? "unlocked" : ""} title={achievement.description} key={achievement.id}>{achievement.icon} {achievement.title}</span>)}
+          </div>
+        </section>
         <p className="muted">
           Progress lives in this browser. Use the same student ID to return to
           your collection.
         </p>
+        <section className="profile-achievements">
+          <span className="eyebrow">EXPLORER RANK / DOMAIN PROGRESS</span>
+          <h2>{rank}</h2>
+          <div className="domain-progress-grid">{domainProgress.map((item) => <div key={item.domain}><span>{item.domain}</span><strong>{item.done} / {item.total}</strong><progress value={item.done} max={item.total} /></div>)}</div>
+        </section>
         <div className="profile-actions">
           <button onClick={() => setFeedbackOpen(true)}>
             Playtest feedback
           </button>
           <Link href="/game" className="button primary">
             Continue exploring →
+          </Link>
+          <Link href="/activities" className="button">
+            Open activities
           </Link>
           <button
             onClick={async () => {

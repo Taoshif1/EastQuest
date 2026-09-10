@@ -25,6 +25,9 @@ describe("current objective", () => {
     const objective = currentObjective(save);
     expect(objective?.locationId).toBe("library");
     expect(objective?.guidance).toContain("lift or stairs");
+    expect(objective?.guidance).not.toContain(
+      `${objective?.building} · ${objective?.floor}`,
+    );
     expect(nextFloorsForObjective("ground", objective!)).toContain("fifth");
   });
 

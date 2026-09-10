@@ -114,6 +114,26 @@ function FloorMap({
     </svg>
   );
 }
+
+export function FloorContext() {
+  const { session } = usePlayer();
+  const [world, setWorld] = useState(() => session.position.getWorldLocation());
+  useEffect(() => {
+    const timer = setInterval(
+      () => setWorld(session.position.getWorldLocation()),
+      250,
+    );
+    return () => clearInterval(timer);
+  }, [session]);
+  const floor = floorById(world.floorId)!;
+  return (
+    <div className="floor-context">
+      <span className="eyebrow">{buildingName(world.buildingId)}</span>
+      <strong>{floor.name}</strong>
+    </div>
+  );
+}
+
 export function CampusNavigation({
   transit,
   onTransitClose,
@@ -147,10 +167,6 @@ export function CampusNavigation({
   const target = locations.find((l) => l.id === next?.locationId);
   return (
     <>
-      <div className="floor-context">
-        <span className="eyebrow">{buildingName(world.buildingId)}</span>
-        <strong>{floor.name}</strong>
-      </div>
       <button
         className="minimap-button"
         aria-label="Open campus map"

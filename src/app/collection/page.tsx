@@ -5,6 +5,8 @@ import { PageHeader, PlayerGuard, Disclaimer } from "@/components/ui/shell";
 import { KeyIcon } from "@/components/ui/key-icon";
 import { buildingName } from "@/game/data/campus/index";
 import { collectibles, locations } from "@/game/data/campus";
+import { achievements, rumors } from "@/game/activities";
+import { hiddenDiscoveries, npcs } from "@/game/campus-life";
 function Collection() {
   const { save } = usePlayer();
   const count = Object.keys(save!.collectibles).length;
@@ -104,6 +106,46 @@ function Collection() {
             );
           })}
         </div>
+        <section className="collection-extras">
+          <div>
+            <span className="eyebrow">ACTIVITY STAMPS</span>
+            <h2>Small wins, kept</h2>
+            <div className="stamp-grid">
+              {Object.entries(save!.stamps ?? {}).map(([id, stamp]) => (
+                <article key={id}><strong>✦</strong><span>{id.replaceAll("-", " ")}</span><small>{new Date(stamp.obtainedAt).toLocaleDateString()}</small></article>
+              ))}
+              {Object.keys(save!.stamps ?? {}).length === 0 && <p className="muted">Play an activity to earn your first stamp.</p>}
+            </div>
+            <div>
+              <span className="eyebrow">HIDDEN DISCOVERY SETS</span>
+              <h2>Field stamps</h2>
+              <div className="stamp-grid">
+                {hiddenDiscoveries.map((item) => {
+                  const found = save!.hiddenDiscoveries?.[item.id];
+                  return <article className={found ? "unlocked" : "locked"} key={item.id}><strong>{found ? "✦" : "◇"}</strong><span>{found ? item.title : "Undiscovered trace"}</span><small>{found ? item.stamp : `${item.set} · explore the world`}</small></article>;
+                })}
+              </div>
+            </div>
+            <div>
+              <span className="eyebrow">CAMPUS CONTACTS</span>
+              <h2>People you met</h2>
+              <div className="achievement-grid">
+                {npcs.map((npc) => <article className={save!.npcsMet?.[npc.id] ? "unlocked" : "locked"} key={npc.id}><strong>{save!.npcsMet?.[npc.id] ? "●" : "?"}</strong><span>{save!.npcsMet?.[npc.id] ? npc.name : "Unknown contact"}</span><small>{save!.npcsMet?.[npc.id] ? npc.role : "Find them on campus."}</small></article>)}
+              </div>
+            </div>
+          </div>
+          <div>
+            <span className="eyebrow">ACHIEVEMENTS</span>
+            <h2>Milestones</h2>
+            <div className="achievement-grid">
+              {achievements.map((achievement) => {
+                const unlocked = Boolean(save!.achievements?.[achievement.id]);
+                return <article className={unlocked ? "unlocked" : "locked"} key={achievement.id}><strong>{achievement.icon}</strong><span>{achievement.title}</span><small>{unlocked ? achievement.description : "Keep exploring to reveal this."}</small></article>;
+              })}
+            </div>
+          </div>
+          {save!.discoveredRumors && save!.discoveredRumors.length > 0 && <div><span className="eyebrow">NPC NOTEBOOK</span><h2>Stories collected</h2><div className="rumor-list">{rumors.filter((rumor) => save!.discoveredRumors?.includes(rumor.id)).map((rumor) => <article className="found" key={rumor.id}><strong>{rumor.title}</strong><span>{rumor.npc} · {rumor.text}</span></article>)}</div></div>}
+        </section>
         <Link href="/game" className="button primary">
           Back to campus →
         </Link>
