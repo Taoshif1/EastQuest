@@ -53,6 +53,8 @@ export class LocalGameRepository implements GameRepository {
         discoveredPois: Array.isArray(data.discoveredPois)
           ? data.discoveredPois.filter((id) => typeof id === "string")
           : [],
+        cases: data.cases && typeof data.cases === "object" ? data.cases : undefined,
+        badges: data.badges && typeof data.badges === "object" ? data.badges : {},
       };
     } catch {
       throw new Error(
