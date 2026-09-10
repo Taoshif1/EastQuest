@@ -15,7 +15,12 @@ import { drawFloor } from "@/game/rendering/campus-renderer";
 import type { GameSession } from "@/game/core/session";
 import { facingDirection, normalizedDirection } from "@/game/movement/position-provider";
 import type { WorldPosition } from "@/types/game";
-import { npcs, worldInteractions } from "@/game/campus-life";
+import {
+  npcs,
+  rankInteractions,
+  worldInteractions,
+  type InteractionCandidate,
+} from "@/game/campus-life";
 
 /** Scene owns drawing, Arcade physics and proximity prompts, never quest rewards. */
 export class CampusScene extends Phaser.Scene {
@@ -24,6 +29,7 @@ export class CampusScene extends Phaser.Scene {
   private touch: WorldPosition = { x: 0, y: 0 };
   private paused = false;
   private nearby: string | null = null;
+  private nearbyCandidates: InteractionCandidate[] = [];
   private nearestConnection: string | null = null;
   private travelling = false;
   private moving = false;
@@ -34,6 +40,7 @@ export class CampusScene extends Phaser.Scene {
   }
   create() {
     this.nearby = null;
+    this.nearbyCandidates = [];
     this.nearestConnection = null;
     this.travelling = false;
     const floorId = this.session.position.getWorldLocation().floorId;
@@ -87,6 +94,19 @@ export class CampusScene extends Phaser.Scene {
         this.paused = paused;
         resetInput();
         if (this.input.keyboard) this.input.keyboard.enabled = !paused;
+      }),
+    );
+    this.disposers.push(
+      this.session.bridge.on("CYCLE_INTERACTION", (direction) => {
+        if (this.nearbyCandidates.length < 2) return;
+        const current = this.nearbyCandidates.findIndex(
+          (candidate) => candidate.id === this.nearby,
+        );
+        const next =
+          (current + direction + this.nearbyCandidates.length) %
+          this.nearbyCandidates.length;
+        this.nearby = this.nearbyCandidates[next].id;
+        this.session.bridge.emit("INTERACTION_AVAILABLE", this.nearby);
       }),
     );
     this.disposers.push(
@@ -240,8 +260,33 @@ export class CampusScene extends Phaser.Scene {
     npcs
       .filter((npc) => npc.floorId === floorId)
       .forEach((npc) => {
-        const avatar = this.add.circle(npc.position.x, npc.position.y, 14, Phaser.Display.Color.HexStringToColor(npc.accent).color, 1).setDepth(9);
-        avatar.setStrokeStyle(2, 0x182631, 1);
+        const group = this.add.container(npc.position.x, npc.position.y).setDepth(9);
+        const accent = Phaser.Display.Color.HexStringToColor(npc.accent).color;
+        const height = npc.id === "sana" || npc.id === "javed" ? 1.08 : npc.id === "toma" ? 0.92 : 1;
+        const body = this.add
+          .rectangle(0, 8, 20, 24, accent, 1)
+          .setStrokeStyle(2, 0x182631, 1);
+        const head = this.add.circle(0, -10, 9, 0xe8ba92, 1);
+        const hair = this.add.circle(0, -17, npc.id === "rafi" ? 8 : 7, 0x263640, 1);
+        group.add([body, head, hair]);
+        if (npc.id === "rafi") {
+          group.add(this.add.rectangle(-13, 7, 5, 18, 0x5e4735, 1).setAngle(-12));
+        } else if (npc.id === "lina") {
+          group.add(this.add.rectangle(13, 9, 7, 13, 0xe7d8a0, 1));
+        } else if (npc.id === "toma") {
+          group.add(this.add.circle(8, -11, 2, 0x9ad3d2, 1));
+        } else if (npc.id === "javed") {
+          group.add(this.add.rectangle(0, -21, 18, 4, accent, 1));
+        }
+        group.setScale(height);
+        this.tweens.add({
+          targets: group,
+          y: npc.position.y - 2,
+          duration: 850 + npc.id.length * 60,
+          yoyo: true,
+          repeat: -1,
+          ease: "Sine.inOut",
+        });
         this.label(npc.position.x, npc.position.y - 27, npc.name, 11, npc.accent).setDepth(9);
       });
   }
@@ -312,7 +357,7 @@ export class CampusScene extends Phaser.Scene {
           id: l.id,
           distance: Math.hypot(position.x - l.worldPosition.x, position.y - l.worldPosition.y),
           radius: l.interactionRadius,
-          poi: true,
+          kind: "poi" as const,
         })),
       ...worldInteractions
         .filter((item) => item.floorId === floorId)
@@ -320,7 +365,12 @@ export class CampusScene extends Phaser.Scene {
           id: item.id,
           distance: Math.hypot(position.x - item.position.x, position.y - item.position.y),
           radius: item.radius ?? 58,
-          poi: false,
+          kind:
+            item.kind === "discovery"
+              ? ("discovery" as const)
+              : item.kind === "quest"
+                ? ("side-quest" as const)
+                : ("activity" as const),
         })),
       ...npcs
         .filter((npc) => npc.floorId === floorId)
@@ -328,15 +378,31 @@ export class CampusScene extends Phaser.Scene {
           id: `npc:${npc.id}`,
           distance: Math.hypot(position.x - npc.position.x, position.y - npc.position.y),
           radius: 58,
-          poi: false,
+          kind: "npc" as const,
         })),
-    ].sort((a, b) => a.distance - b.distance)[0];
-    const interactionId = candidates && candidates.distance <= candidates.radius ? candidates.id : null;
+    ]
+      .filter((candidate) => candidate.distance <= candidate.radius)
+      .map((candidate) => ({
+        id: candidate.id,
+        distance: candidate.distance,
+        kind: candidate.kind,
+      }));
+    this.nearbyCandidates = rankInteractions(candidates);
+    const preferred = this.nearbyCandidates.find(
+      (candidate) => candidate.id === this.nearby,
+    );
+    const selected = preferred ?? this.nearbyCandidates[0];
+    const interactionId = selected?.id ?? null;
     if (interactionId !== this.nearby) {
       this.nearby = interactionId;
-      if (candidates && interactionId) {
+      if (selected && interactionId) {
         this.session.bridge.emit("INTERACTION_AVAILABLE", interactionId);
-        if (candidates.poi) this.session.bridge.emit("POI_DISCOVERED", interactionId);
+        this.session.bridge.emit(
+          "INTERACTION_OPTIONS",
+          this.nearbyCandidates.map((candidate) => candidate.id),
+        );
+        if (selected.kind === "poi")
+          this.session.bridge.emit("POI_DISCOVERED", interactionId);
       } else this.session.bridge.emit("INTERACTION_CLEARED", undefined);
     }
     const core = connectionsOn(floorId)

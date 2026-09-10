@@ -12,6 +12,7 @@ type Props = {
 export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
   const [round, setRound] = useState(0);
   const [score, setScore] = useState<number | null>(null);
+  const [totalScore, setTotalScore] = useState(0);
   const [busy, setBusy] = useState(false);
   const [meter, setMeter] = useState(0);
   const [meterRunning, setMeterRunning] = useState(false);
@@ -46,15 +47,24 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
     await onFinish(Math.round(value), value >= 60);
     setBusy(false);
   }
+  function submitRound(value: number) {
+    const nextTotal = totalScore + Math.round(value);
+    if (round + 1 < activity.rounds.length) {
+      setTotalScore(nextTotal);
+      setRound((currentRound) => currentRound + 1);
+      setMeter(0);
+      setMeterRunning(false);
+      setCorner(null);
+      setKeeper(null);
+      setReaction("ready");
+      return;
+    }
+    void finish(nextTotal / activity.rounds.length);
+  }
 
   function answer(index: number) {
     const correct = index === current.correctIndex;
-    const nextScore = correct ? 100 : 0;
-    if (round + 1 < activity.rounds.length) {
-      setRound((value) => value + 1);
-      return;
-    }
-    void finish(nextScore);
+    submitRound(correct ? 100 : 0);
   }
 
   function startReaction() {
@@ -63,7 +73,7 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
     goTimer.current = window.setTimeout(() => {
       setReaction("go");
       startedAt.current = performance.now();
-    }, 900 + Math.random() * 1400);
+    }, 900 + round * 150);
   }
 
   function hitReaction() {
@@ -71,12 +81,12 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
     if (reaction === "waiting") {
       if (goTimer.current) window.clearTimeout(goTimer.current);
       setReaction("done");
-      void finish(0);
+      submitRound(0);
       return;
     }
     const elapsed = performance.now() - startedAt.current;
     setReaction("done");
-    void finish(Math.max(0, Math.min(100, 100 - (elapsed - 180) / 4)));
+    submitRound(Math.max(0, Math.min(100, 100 - (elapsed - 180) / 4)));
   }
 
   return (
@@ -111,7 +121,7 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
           {!meterRunning ? (
             <button className="primary" onClick={() => setMeterRunning(true)}>Start meter</button>
           ) : (
-            <button className="primary" onClick={() => void finish(100 - Math.min(100, Math.abs(meter - 70) * 3))}>Release shot</button>
+            <button className="primary" onClick={() => submitRound(100 - Math.min(100, Math.abs(meter - 70) * 3))}>Release shot</button>
           )}
           <small className="muted">Gold zone: 60–80. Release inside it for a clean shot.</small>
         </div>
@@ -126,9 +136,9 @@ export function ActivityRunner({ activity, onFinish, onCancel }: Props) {
           </div>
           <button className="primary" disabled={!corner} onClick={() => {
             const choices = ["Top left", "Top right", "Bottom left", "Bottom right"];
-            const picked = choices[Math.floor(Math.random() * choices.length)];
+            const picked = choices[round % choices.length];
             setKeeper(picked);
-            void finish(picked === corner ? 20 : 100);
+            submitRound(picked === corner ? 20 : 100);
           }}>Take penalty</button>
           {keeper && <p className="game-message">The keeper dived {keeper}.</p>}
         </div>

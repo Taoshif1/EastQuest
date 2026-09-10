@@ -98,6 +98,14 @@ export function recordActivityResult(
       if (!save.achievements?.["rumor-keeper"]) newAchievementIds.push("rumor-keeper");
       if (!next.discoveredRumors?.includes(definition.id))
         next = { ...next, discoveredRumors: [...(next.discoveredRumors ?? []), definition.id] };
+      if (definition.id === "midnight-stairwell")
+        next = {
+          ...next,
+          followedRumors: {
+            ...(next.followedRumors ?? {}),
+            "midnight-stairwell": { followedAt: now },
+          },
+        };
     }
   }
   return {

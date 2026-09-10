@@ -20,14 +20,25 @@ export function discoverHidden(save: GameSave, id: string) {
     ...(save.notifications ?? []),
     { id: `discovery-${id}`, message: `${discovery.title} added to your collection.`, createdAt: now, read: false },
   ].slice(-20);
+  const discovered = { ...(save.hiddenDiscoveries ?? {}), [id]: { discoveredAt: now, stamp: discovery.stamp } };
+  const marks = ["three-marks-i", "three-marks-ii", "three-marks-iii"];
+  const completedMarks = marks.every((mark) => discovered[mark]);
+  const achievements = completedMarks
+    ? { ...(save.achievements ?? {}), "three-marks": { awardedAt: now } }
+    : save.achievements;
   return {
     isNew: true,
     save: {
       ...save,
       xp: save.xp + discovery.rewardXp,
       level: Math.floor((save.xp + discovery.rewardXp) / 300) + 1,
-      hiddenDiscoveries: { ...(save.hiddenDiscoveries ?? {}), [id]: { discoveredAt: now, stamp: discovery.stamp } },
+      hiddenDiscoveries: discovered,
+      achievements,
       discoveredInteractions: { ...(save.discoveredInteractions ?? {}), [discovery.interactionId]: { discoveredAt: now } },
+      followedRumors:
+        id === "first-leaf"
+          ? { ...(save.followedRumors ?? {}), "rooftop-garden": { followedAt: now } }
+          : save.followedRumors,
       notifications,
     },
   };

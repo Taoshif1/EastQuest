@@ -13,6 +13,11 @@ const profile = {
 };
 
 describe("campus activity progression", () => {
+  it("uses multi-round sports loops", () => {
+    expect(activities.find((item) => item.id === "cricket-boundary-timing")?.rounds).toHaveLength(6);
+    expect(activities.find((item) => item.id === "futsal-penalty")?.rounds).toHaveLength(5);
+    expect(activities.find((item) => item.id === "table-tennis-reaction")?.rounds).toHaveLength(3);
+  });
   it("keeps activity IDs unique and covers the broad playable domains", () => {
     expect(new Set(activities.map((activity) => activity.id)).size).toBe(activities.length);
     expect(new Set(activities.map((activity) => activity.specialty).filter(Boolean)).size).toBeGreaterThanOrEqual(6);

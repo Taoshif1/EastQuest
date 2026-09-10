@@ -17,3 +17,9 @@ export {
   meetNpc,
   startSideQuest,
 } from "./engine";
+export {
+  cycleInteraction,
+  rankInteractions,
+  type InteractionCandidate,
+  type InteractionCandidateKind,
+} from "./interaction-selection";

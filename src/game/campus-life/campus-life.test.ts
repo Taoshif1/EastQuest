@@ -7,7 +7,7 @@ const profile = { id: "local:life", studentId: "life-1", email: "life@test", dis
 
 describe("campus life progression", () => {
   it("ships distributed interactions, NPCs, discoveries, and side quests as content data", async () => {
-    expect(hiddenDiscoveries).toHaveLength(8);
+    expect(hiddenDiscoveries).toHaveLength(11);
     expect(worldInteractions.length).toBeGreaterThanOrEqual(12);
     expect(npcs.length).toBeGreaterThanOrEqual(6);
     expect(sideQuests).toHaveLength(5);
@@ -20,6 +20,13 @@ describe("campus life progression", () => {
     expect(second.isNew).toBe(false);
     expect(second.save.xp).toBe(first.save.xp);
     expect(first.save.hiddenDiscoveries?.["punch-gate-story"]?.stamp).toBe("TRACE-01");
+  });
+  it("completes the optional Three Marks chain across floors", () => {
+    let save = newGame(profile);
+    for (const id of ["three-marks-i", "three-marks-ii", "three-marks-iii"])
+      save = discoverHidden(save, id).save;
+    expect(save.achievements?.["three-marks"]).toBeDefined();
+    expect(save.hiddenDiscoveries?.["three-marks-iii"]?.stamp).toBe("MARK-III");
   });
   it("advances and completes a multi-step route", () => {
     let save = startSideQuest(newGame(profile), sideQuests[0]);

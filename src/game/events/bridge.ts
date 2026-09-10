@@ -10,6 +10,8 @@ export type GameEvents = {
   CALIBRATION_CHANGED: CalibrationOptions;
   PLAYER_POSITION_CHANGED: WorldPosition;
   INTERACTION_AVAILABLE: string;
+  INTERACTION_OPTIONS: string[];
+  CYCLE_INTERACTION: number;
   INTERACTION_CLEARED: undefined;
   INTERACT: undefined;
   INPUT_CHANGED: WorldPosition;

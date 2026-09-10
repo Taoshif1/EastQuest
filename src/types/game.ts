@@ -128,6 +128,7 @@ export interface WorldInteraction {
   npcId?: string;
   discoveryId?: string;
   questId?: string;
+  activityId?: string;
   rewardXp?: number;
 }
 export interface NPCDefinition {
@@ -188,6 +189,11 @@ export interface NotificationEvent {
   createdAt: string;
   read?: boolean;
 }
+export type TrackedObjective =
+  | { type: "MAIN"; id: string }
+  | { type: "CASE"; id: string }
+  | { type: "SIDE_QUEST"; id: string }
+  | { type: "DAILY"; id: string };
 export interface AchievementDefinition {
   id: string;
   title: string;
@@ -284,10 +290,12 @@ export interface GameSave {
   achievements?: Record<string, { awardedAt: string }>;
   stamps?: Record<string, { obtainedAt: string }>;
   discoveredRumors?: string[];
+  followedRumors?: Record<string, { followedAt: string }>;
   discoveredInteractions?: Record<string, { discoveredAt: string }>;
   hiddenDiscoveries?: Record<string, { discoveredAt: string; stamp: string }>;
   npcsMet?: Record<string, { metAt: string }>;
   sideQuests?: Record<string, SideQuestProgress>;
   dailyChallenge?: DailyChallengeProgress;
   notifications?: NotificationEvent[];
+  trackedObjective?: TrackedObjective;
 }

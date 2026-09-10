@@ -25,6 +25,7 @@ import { cases } from "@/game/cases/data";
 import { CampusLifeInteraction } from "./campus-life-interaction";
 import { interactionById } from "@/game/campus-life";
 import { npcById } from "@/game/campus-life";
+import { sideQuestById } from "@/game/campus-life";
 function CampusGame() {
   const { save, session, activate, error, markNotificationsRead } = usePlayer();
   const [connection, setConnection] = useState<string | null>(null);
@@ -39,6 +40,7 @@ function CampusGame() {
   const [scannerOpen, setScannerOpen] = useState(false);
   const [caseLocation, setCaseLocation] = useState<string | null>(null);
   const [lifeInteraction, setLifeInteraction] = useState<string | null>(null);
+  const [interactionOptions, setInteractionOptions] = useState<string[]>([]);
   useEffect(() => {
     const update = () => setDebug(isDebugMode(window.location.search));
     update();
@@ -87,17 +89,41 @@ function CampusGame() {
       setNearby(id);
       setMessage("");
     });
+    const offOptions = session.bridge.on("INTERACTION_OPTIONS", setInteractionOptions);
     const off2 = session.bridge.on("INTERACTION_CLEARED", () => {
       setNearby(null);
+      setInteractionOptions([]);
       setMessage("");
     });
     return () => {
       off1();
+      offOptions();
       off3();
       off4();
       off2();
     };
   }, [session]);
+  useEffect(() => {
+    const cycle = (event: KeyboardEvent) => {
+      if (
+        (event.key !== "Tab" && event.key.toLowerCase() !== "q") ||
+        event.repeat ||
+        interactionOptions.length < 2 ||
+        active ||
+        lifeInteraction
+      )
+        return;
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      )
+        return;
+      event.preventDefault();
+      session.bridge.emit("CYCLE_INTERACTION", event.shiftKey ? -1 : 1);
+    };
+    window.addEventListener("keydown", cycle);
+    return () => window.removeEventListener("keydown", cycle);
+  }, [session, interactionOptions.length, active, lifeInteraction]);
   useEffect(
     () =>
       session.bridge.on("INTERACT", () => {
@@ -263,8 +289,16 @@ function CampusGame() {
           </aside>
           {objective && (
             <aside className="objective-card" aria-live="polite">
-              <span className="eyebrow">CURRENT OBJECTIVE</span>
-              <strong>{objective.title}</strong>
+              <span className="eyebrow">
+                {save!.trackedObjective?.type === "SIDE_QUEST"
+                  ? "TRACKING / SIDE QUEST"
+                  : "CURRENT OBJECTIVE"}
+              </span>
+              <strong>
+                {save!.trackedObjective?.type === "SIDE_QUEST"
+                  ? sideQuestById(save!.trackedObjective.id)?.title ?? objective.title
+                  : objective.title}
+              </strong>
               <span>{objective.locationName}</span>
               <small>
                 {objective.building} · {objective.floor}
@@ -321,6 +355,28 @@ function CampusGame() {
                   interactionById(nearby ?? "")?.title}
               </strong>
             </div>
+            {interactionOptions.length > 1 && (
+              <div className="interaction-selector">
+                <button
+                  className="secondary"
+                  aria-label="Previous nearby interaction"
+                  onClick={() => session.bridge.emit("CYCLE_INTERACTION", -1)}
+                >
+                  ←
+                </button>
+                <span>
+                  {interactionOptions.indexOf(nearby ?? "") + 1} /{" "}
+                  {interactionOptions.length} · Tab or Q to cycle
+                </span>
+                <button
+                  className="secondary"
+                  aria-label="Next nearby interaction"
+                  onClick={() => session.bridge.emit("CYCLE_INTERACTION", 1)}
+                >
+                  →
+                </button>
+              </div>
+            )}
             <button className="primary" onClick={() => void interact()}>
               <kbd>E</kbd>{" "}
               {save!.quests[quest?.id ?? ""]?.status === "COMPLETED"
